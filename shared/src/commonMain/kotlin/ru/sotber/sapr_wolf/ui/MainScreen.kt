@@ -9,9 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.*
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
-import ru.sotber.sapr_wolf.ui.theme.CanvasBaseDark
+import ru.sotber.sapr_wolf.ui.components.MainAppBar
+import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 
 @Composable
 fun MainScreen() {
@@ -25,7 +28,7 @@ fun MainScreen() {
                     Rod(length = 1.0, crossSectionArea = 1.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = -1.0)
                 ),
                 nodeForces = listOf(0.0, 0.0, 1.0, 0.0, 0.0),
-                fixedNodes = setOf(0, 4)
+                fixedNodes = setOf(0, 4),
             )
         )
     }
@@ -40,16 +43,21 @@ fun MainScreen() {
         focusRequester.requestFocus()
     }
 
+    val mainAppBarRowsHazeState = rememberHazeState()
+    val extraColors = MaterialThemeExtraColors
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CanvasBaseDark)
+            .background(extraColors.canvasBase)
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Spacebar) {
                     val isShift = keyEvent.isShiftPressed
+
                     viewportState.resetTo1to1(horizontalOnly = isShift)
+
                     true
                 } else {
                     false
@@ -57,6 +65,9 @@ fun MainScreen() {
             }
     ) {
         ConstructionCanvas(
+            modifier = Modifier
+                .hazeSource(mainAppBarRowsHazeState)
+                .background(extraColors.canvasBase),
             construction = construction,
             viewportState = viewportState,
             selectedRodIndex = selectedRodIndex,
@@ -69,6 +80,11 @@ fun MainScreen() {
             onSelectNode = { nodeIdx ->
                 selectedNodeIndex = nodeIdx
                 selectedRodIndex = null
+                focusRequester.requestFocus()
+            },
+            onClearSelection = {
+                selectedRodIndex = null
+                selectedNodeIndex = null
                 focusRequester.requestFocus()
             },
             onAddRodLeft = {
@@ -113,6 +129,10 @@ fun MainScreen() {
                 )
                 focusRequester.requestFocus()
             }
+        )
+
+        MainAppBar(
+            rowsHazeState = mainAppBarRowsHazeState,
         )
     }
 }

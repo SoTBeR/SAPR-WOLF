@@ -5,10 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 class ViewportState(
-    initialZoom: Float = 80f,
+    initialZoom: Float = BASE_ZOOM,
     initialHeightScale: Float = 1.0f,
     initialPanX: Float = 0f,
-    initialPanY: Float = 0f
+    initialPanY: Float = 0f,
 ) {
     var zoomX by mutableStateOf(initialZoom)
     var heightScale by mutableStateOf(initialHeightScale)
@@ -18,7 +18,8 @@ class ViewportState(
     var isInitialized by mutableStateOf(false)
 
     val zoom: Float get() = zoomX
-    val scaleFactor: Float get() = heightScale.coerceIn(0.2f, 4.0f)
+    val scaleFactor: Float get() = heightScale.coerceIn(MIN_SCALE, MAX_SCALE)
+    val zoomPercent: Double get() = (zoomX / BASE_ZOOM) * 100.0
 
     fun worldToScreenX(worldX: Double, canvasWidth: Float, totalConstructionLength: Double): Float {
         val worldCenterX = totalConstructionLength / 2.0
@@ -38,24 +39,32 @@ class ViewportState(
         canvasWidth: Float,
         canvasHeight: Float,
         zoomFactorChange: Float,
-        horizontalOnly: Boolean
+        horizontalOnly: Boolean,
     ) {
-        val oldZoomX = zoomX
-        val newZoomX = (oldZoomX * zoomFactorChange).coerceIn(10f, 450f)
-        if (newZoomX == oldZoomX) return
+        if (horizontalOnly) {
+            val oldZoomX = zoomX
+            val newZoomX = (oldZoomX * zoomFactorChange).coerceIn(MIN_ZOOM_X, MAX_ZOOM_X)
+            val appliedFactorX = newZoomX / oldZoomX
+            if (appliedFactorX == 1f) return
+
+            val cursorRelX = cursorScreenX - canvasWidth / 2f
+            panX = cursorRelX - (cursorRelX - panX) * appliedFactorX
+            zoomX = newZoomX
+            return
+        }
+
+        val minAllowedFactor = maxOf(MIN_ZOOM_X / zoomX, MIN_SCALE / heightScale).coerceAtMost(1f)
+        val maxAllowedFactor = minOf(MAX_ZOOM_X / zoomX, MAX_SCALE / heightScale).coerceAtLeast(1f)
+        val appliedFactor = zoomFactorChange.coerceIn(minAllowedFactor, maxAllowedFactor)
+        if (appliedFactor == 1f) return
 
         val cursorRelX = cursorScreenX - canvasWidth / 2f
-        panX = cursorRelX - (cursorRelX - panX) * (newZoomX / oldZoomX)
-        zoomX = newZoomX
+        val cursorRelY = cursorScreenY - canvasHeight / 2f
 
-        if (!horizontalOnly) {
-            val oldHeightScale = heightScale
-            val newHeightScale = (oldHeightScale * zoomFactorChange).coerceIn(0.25f, 3.5f)
-            heightScale = newHeightScale
-
-            val cursorRelY = cursorScreenY - canvasHeight / 2f
-            panY = cursorRelY - (cursorRelY - panY) * (newHeightScale / oldHeightScale)
-        }
+        panX = cursorRelX - (cursorRelX - panX) * appliedFactor
+        panY = cursorRelY - (cursorRelY - panY) * appliedFactor
+        zoomX = (zoomX * appliedFactor).coerceIn(MIN_ZOOM_X, MAX_ZOOM_X)
+        heightScale = (heightScale * appliedFactor).coerceIn(MIN_SCALE, MAX_SCALE)
     }
 
     fun pan(deltaX: Float, deltaY: Float) {
@@ -64,22 +73,45 @@ class ViewportState(
     }
 
     fun fitToView(canvasWidth: Float, totalConstructionLength: Double) {
-        if (totalConstructionLength <= 0.0 || canvasWidth <= 0f) return
-        val padding = 140f
-        val availableWidth = (canvasWidth - padding * 2).coerceAtLeast(100f)
-        zoomX = (availableWidth / totalConstructionLength).toFloat().coerceIn(20f, 300f)
-        heightScale = (zoomX / 80f).coerceIn(0.7f, 1.8f)
+        if (canvasWidth <= 0f) return
+        if (totalConstructionLength <= 0.0) {
+            resetTo1to1()
+            isInitialized = true
+            return
+        }
+
+        val availableWidth = (canvasWidth - FIT_HORIZONTAL_PADDING * 2f).coerceAtLeast(MIN_AVAILABLE_WIDTH)
+        val effectiveWorldWidth = totalConstructionLength + FIT_SIDE_WORLD_ALLOWANCE
+        val fitScale = ((availableWidth / effectiveWorldWidth).toFloat() / BASE_ZOOM)
+            .coerceIn(MIN_FIT_SCALE, MAX_FIT_SCALE)
+
+        zoomX = fitScale * BASE_ZOOM
+        heightScale = fitScale
         panX = 0f
         panY = 0f
         isInitialized = true
     }
 
     fun resetTo1to1(horizontalOnly: Boolean = false) {
-        zoomX = 80f
+        zoomX = BASE_ZOOM
         panX = 0f
         if (!horizontalOnly) {
             heightScale = 1.0f
             panY = 0f
         }
+    }
+
+    companion object {
+        const val BASE_ZOOM = 80f
+        const val MIN_SCALE = 0.2f
+        const val MAX_SCALE = 5.0f
+        const val MIN_ZOOM_X = BASE_ZOOM * MIN_SCALE
+        const val MAX_ZOOM_X = BASE_ZOOM * MAX_SCALE
+
+        private const val MIN_FIT_SCALE = 0.25f
+        private const val MAX_FIT_SCALE = 2.5f
+        private const val FIT_HORIZONTAL_PADDING = 64f
+        private const val MIN_AVAILABLE_WIDTH = 120f
+        private const val FIT_SIDE_WORLD_ALLOWANCE = 2.0
     }
 }

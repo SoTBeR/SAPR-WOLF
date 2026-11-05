@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">SAPR-WOLF</string>
+    <string name="open_project">Открыть</string>
+    <string name="save_project">Сохранить</string>
+    <string name="start_project">Начать</string>
+    <string name="preprocessor">Препроцессор</string>
+    <string name="processor">Процессор</string>
+    <string name="postprocessor">Постпроцессор</string>
+    <string name="calculate">Рассчитать</string>
+</resources>

@@ -7,10 +7,10 @@ import androidx.compose.ui.unit.dp
 
 data class BlurRadius(
     val level0: Dp = 0.dp,
-    val scrim: Dp = 6.dp,
-    val chip: Dp = 12.dp,
-    val panel: Dp = 24.dp,
-    val modal: Dp = 40.dp,
+    val level1: Dp = 6.dp,
+    val level2: Dp = 12.dp,
+    val level3: Dp = 24.dp,
+    val level4: Dp = 40.dp,
 )
 
 val LocalBlurRadius = staticCompositionLocalOf { BlurRadius() }
