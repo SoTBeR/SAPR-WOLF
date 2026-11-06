@@ -173,13 +173,13 @@ fun MainAppBar(
 
             MainAppBarRowDivider()
 
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = Res.drawable.ic_undo,
                 enabled = canUndo,
                 onClick = onUndo,
             )
 
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = Res.drawable.ic_redo,
                 enabled = canRedo,
                 onClick = onRedo,
@@ -226,7 +226,7 @@ fun MainAppBar(
         MainAppBarRow(
             hazeState = rowsHazeState,
         ) {
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = Res.drawable.ic_scale,
                 onClick = onResetScale,
             )
@@ -241,17 +241,17 @@ fun MainAppBar(
 
             MainAppBarRowDivider()
 
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = if (isDarkTheme) Res.drawable.ic_dark_mode else Res.drawable.ic_light_mode,
                 onClick = onToggleTheme,
             )
 
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = Res.drawable.ic_export_report,
                 onClick = onExportReport,
             )
 
-            MainAppBarIconButton(
+            MainAppBarRowIconButton(
                 iconRes = Res.drawable.ic_settings,
                 onClick = onOpenSettings,
             )
@@ -400,7 +400,7 @@ fun MainAppBarRowButton(
 }
 
 @Composable
-fun MainAppBarIconButton(
+fun MainAppBarRowIconButton(
     iconRes: DrawableResource,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

@@ -63,6 +63,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.haze)
             implementation(libs.haze.blur)
+            implementation(libs.haze.glass)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
