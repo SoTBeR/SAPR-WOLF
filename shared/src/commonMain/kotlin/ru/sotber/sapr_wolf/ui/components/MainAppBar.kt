@@ -16,8 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import kotlin.math.roundToInt
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeBlurStyle
@@ -27,14 +31,9 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.ui.theme.*
 import sapr_wolf.shared.generated.resources.*
-
-enum class AppStage {
-    Preprocessor,
-    Processor,
-    Postprocessor,
-}
 
 enum class MainAppBarButtonStyle {
     Ghost,
@@ -122,6 +121,8 @@ fun MainAppBar(
     rowsHazeState: HazeState,
     modifier: Modifier = Modifier,
     selectedStage: AppStage = AppStage.Preprocessor,
+    isProcessorEnabled: Boolean = true,
+    isPostprocessorEnabled: Boolean = false,
     zoomLabel: Double = 100.0,
     canUndo: Boolean = true,
     canRedo: Boolean = true,
@@ -139,6 +140,14 @@ fun MainAppBar(
     onOpenSettings: () -> Unit = {},
 ) {
     val isDarkTheme = MaterialThemeExtraColors.isDark
+
+    val textMeasurer = rememberTextMeasurer()
+    val minZoomTextWidthPx = remember(textMeasurer) {
+        textMeasurer.measure(
+            text = "_".repeat(4),
+            style = MonoTextStyle,
+        ).size.width
+    }
 
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -201,6 +210,7 @@ fun MainAppBar(
                 iconRes = Res.drawable.ic_processor,
                 textRes = Res.string.processor,
                 style = MainAppBarButtonStyle.Segment,
+                enabled = isProcessorEnabled,
                 isSelected = selectedStage == AppStage.Processor,
                 onClick = { onSelectStage(AppStage.Processor) },
             )
@@ -209,6 +219,7 @@ fun MainAppBar(
                 iconRes = Res.drawable.ic_postprocessor,
                 textRes = Res.string.postprocessor,
                 style = MainAppBarButtonStyle.Segment,
+                enabled = isPostprocessorEnabled,
                 isSelected = selectedStage == AppStage.Postprocessor,
                 onClick = { onSelectStage(AppStage.Postprocessor) },
             )
@@ -232,11 +243,29 @@ fun MainAppBar(
             )
 
             Text(
-                text = "${zoomLabel.toInt()}%",
+                text = "${zoomLabel.roundToInt()}%",
                 style = MonoTextStyle,
+                textAlign = TextAlign.End,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                modifier = Modifier.padding(horizontal = MaterialThemeSpacing.small),
+                modifier = Modifier
+                    .padding(
+                        end = MaterialThemeSpacing.small,
+                    )
+                    .layout { measurable, constraints ->
+                        val resolvedMinWidth = minZoomTextWidthPx.coerceIn(
+                            constraints.minWidth,
+                            constraints.maxWidth,
+                        )
+
+                        val placeable = measurable.measure(
+                            constraints.copy(minWidth = resolvedMinWidth)
+                        )
+
+                        layout(placeable.width, placeable.height) {
+                            placeable.placeRelative(0, 0)
+                        }
+                    },
             )
 
             MainAppBarRowDivider()
