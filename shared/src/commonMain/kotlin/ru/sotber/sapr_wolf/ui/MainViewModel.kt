@@ -93,7 +93,7 @@ class MainViewModel : ViewModel() {
     fun addRodLeft() {
         val construction = _uiState.value.construction
         val firstRod = construction.rods.firstOrNull()
-        val newRod = firstRod?.copy(distributedLoad = 0.0) ?: defaultRod()
+        val newRod = firstRod?.copy(distributedLoad = 0.0) ?: Rod.defaultRod()
 
         if (construction.rods.isEmpty()) {
             modifyConstruction(
@@ -131,7 +131,7 @@ class MainViewModel : ViewModel() {
     fun addRodRight() {
         val construction = _uiState.value.construction
         val lastRod = construction.rods.lastOrNull()
-        val newRod = lastRod?.copy(distributedLoad = 0.0) ?: defaultRod()
+        val newRod = lastRod?.copy(distributedLoad = 0.0) ?: Rod.defaultRod()
 
         if (construction.rods.isEmpty()) {
             modifyConstruction(
@@ -324,7 +324,7 @@ class MainViewModel : ViewModel() {
 
     fun startNewProject(defaultConstruction: Boolean = false) {
         modifyConstruction(
-            newConstruction = if (defaultConstruction) defaultDemoConstruction() else Construction(),
+            newConstruction = if (defaultConstruction) Construction.defaultDemoConstruction() else Construction(),
             transformSelectedRod = { null },
             transformSelectedNode = { null },
         )
@@ -539,20 +539,13 @@ class MainViewModel : ViewModel() {
     }
 
     private fun createInitialState(): MainUiState {
-        val initialConstruction = defaultDemoConstruction()
+        val initialConstruction = Construction.defaultDemoConstruction()
 
         return MainUiState(
             construction = initialConstruction,
             validationIssues = ConstructionValidator.validate(initialConstruction),
         )
     }
-
-    private fun defaultRod(): Rod = Rod(
-        length = ConstructionNormalizer.DEFAULT_LENGTH,
-        crossSectionArea = ConstructionNormalizer.DEFAULT_AREA,
-        elasticModulus = ConstructionNormalizer.DEFAULT_MODULUS,
-        allowableStress = ConstructionNormalizer.DEFAULT_ALLOWABLE_STRESS,
-    )
 
     companion object {
         private const val MAX_HISTORY_SIZE = 50

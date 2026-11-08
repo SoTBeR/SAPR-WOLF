@@ -150,13 +150,7 @@ class ValidatorTest {
         val normalized = result.construction
         assertEquals(2, normalized.rods.size)
         assertEquals(
-            Rod(
-                length = ConstructionNormalizer.DEFAULT_LENGTH,
-                crossSectionArea = ConstructionNormalizer.DEFAULT_AREA,
-                elasticModulus = ConstructionNormalizer.DEFAULT_MODULUS,
-                allowableStress = ConstructionNormalizer.DEFAULT_ALLOWABLE_STRESS,
-                distributedLoad = ConstructionNormalizer.DEFAULT_DISTRIBUTED_LOAD,
-            ),
+            Rod.defaultRod(),
             normalized.rods[0],
         )
         assertEquals(raw.rods[1], normalized.rods[1])

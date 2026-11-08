@@ -2,9 +2,30 @@ package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import dev.chrisbanes.haze.blur.HazeBlurStyle
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import ru.sotber.sapr_wolf.ui.theme.MaterialThemeBlurRadius
+import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 
 object MainAppBarDefaults {
+    @Composable
+    fun blurStyle(): HazeBlurStyle {
+        val surfaceColor = MaterialTheme.colorScheme.surface
+        val canvasBaseColor = MaterialThemeExtraColors.canvasBase
+        val panelBlurRadius = MaterialThemeBlurRadius.level3
+
+        return remember(surfaceColor, canvasBaseColor, panelBlurRadius) {
+            HazeBlurStyle {
+                blurRadius(panelBlurRadius)
+                noiseFactor(0f)
+                backgroundColor(canvasBaseColor)
+                colorEffects(listOf(HazeColorEffect.tint(surfaceColor)))
+            }
+        }
+    }
+
     @Composable
     fun containerColor(
         style: MainAppBarButtonStyle,

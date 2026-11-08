@@ -34,7 +34,7 @@ sealed interface FileDialogAlert {
 }
 
 data class MainUiState(
-    val construction: Construction = defaultDemoConstruction(),
+    val construction: Construction = Construction.defaultDemoConstruction(),
     val selectedStage: AppStage = AppStage.Preprocessor,
     val isCalculated: Boolean = false,
     val selectedRodIndex: Int? = null,
@@ -55,15 +55,3 @@ data class MainUiState(
     val isPostprocessorEnabled: Boolean
         get() = isCalculated
 }
-
-fun defaultDemoConstruction(): Construction = Construction(
-    rods = listOf(
-        Rod(length = 1.0, crossSectionArea = 2.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = 0.0),
-        Rod(length = 2.0, crossSectionArea = 1.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = 3.0),
-        Rod(length = 3.0, crossSectionArea = 3.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = 0.0),
-        Rod(length = 2.0, crossSectionArea = 1.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = 0.0),
-        Rod(length = 1.0, crossSectionArea = 2.0, elasticModulus = 1.0, allowableStress = 160.0, distributedLoad = -5.0),
-    ),
-    nodeForces = listOf(0.0, 0.0, -1.0, 2.0, 0.0, 0.0),
-    fixedNodes = setOf(0, 5),
-)

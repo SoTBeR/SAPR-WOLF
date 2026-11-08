@@ -52,13 +52,6 @@ fun NormalizationChange.localizedMessage(): String = when (this) {
 }
 
 object ConstructionNormalizer {
-    const val DEFAULT_LENGTH = 1.0
-    const val DEFAULT_AREA = 1.0
-    const val DEFAULT_MODULUS = 1.0
-    const val DEFAULT_ALLOWABLE_STRESS = 160.0
-    const val DEFAULT_DISTRIBUTED_LOAD = 0.0
-    const val DEFAULT_NODE_FORCE = 0.0
-
     fun normalize(construction: Construction): NormalizationResult {
         val changes = mutableListOf<NormalizationChange>()
 
@@ -83,36 +76,36 @@ object ConstructionNormalizer {
             val validLength = if (rod.length.isFinite() && rod.length > 0.0) {
                 rod.length
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidRodLength(rodNumber, DEFAULT_LENGTH))
-                DEFAULT_LENGTH
+                changes.add(NormalizationChange.ReplacedInvalidRodLength(rodNumber, Rod.DEFAULT_LENGTH))
+                Rod.DEFAULT_LENGTH
             }
 
             val validArea = if (rod.crossSectionArea.isFinite() && rod.crossSectionArea > 0.0) {
                 rod.crossSectionArea
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidRodArea(rodNumber, DEFAULT_AREA))
-                DEFAULT_AREA
+                changes.add(NormalizationChange.ReplacedInvalidRodArea(rodNumber, Rod.DEFAULT_AREA))
+                Rod.DEFAULT_AREA
             }
 
             val validModulus = if (rod.elasticModulus.isFinite() && rod.elasticModulus > 0.0) {
                 rod.elasticModulus
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidRodModulus(rodNumber, DEFAULT_MODULUS))
-                DEFAULT_MODULUS
+                changes.add(NormalizationChange.ReplacedInvalidRodModulus(rodNumber, Rod.DEFAULT_MODULUS))
+                Rod.DEFAULT_MODULUS
             }
 
             val validAllowableStress = if (rod.allowableStress.isFinite() && rod.allowableStress > 0.0) {
                 rod.allowableStress
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidRodAllowableStress(rodNumber, DEFAULT_ALLOWABLE_STRESS))
-                DEFAULT_ALLOWABLE_STRESS
+                changes.add(NormalizationChange.ReplacedInvalidRodAllowableStress(rodNumber, Rod.DEFAULT_ALLOWABLE_STRESS))
+                Rod.DEFAULT_ALLOWABLE_STRESS
             }
 
             val validDistributedLoad = if (rod.distributedLoad.isFinite()) {
                 rod.distributedLoad
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidRodDistributedLoad(rodNumber, DEFAULT_DISTRIBUTED_LOAD))
-                DEFAULT_DISTRIBUTED_LOAD
+                changes.add(NormalizationChange.ReplacedInvalidRodDistributedLoad(rodNumber, Rod.DEFAULT_DISTRIBUTED_LOAD))
+                Rod.DEFAULT_DISTRIBUTED_LOAD
             }
 
             Rod(
@@ -131,12 +124,12 @@ object ConstructionNormalizer {
         }
 
         val normalizedForces = List(totalNodes) { nodeIndex ->
-            val rawForce = construction.nodeForces.getOrElse(nodeIndex) { DEFAULT_NODE_FORCE }
+            val rawForce = construction.nodeForces.getOrElse(nodeIndex) { Construction.DEFAULT_NODE_FORCE }
             if (rawForce.isFinite()) {
                 rawForce
             } else {
-                changes.add(NormalizationChange.ReplacedInvalidNodeForce(nodeIndex + 1, DEFAULT_NODE_FORCE))
-                DEFAULT_NODE_FORCE
+                changes.add(NormalizationChange.ReplacedInvalidNodeForce(nodeIndex + 1, Construction.DEFAULT_NODE_FORCE))
+                Construction.DEFAULT_NODE_FORCE
             }
         }
 

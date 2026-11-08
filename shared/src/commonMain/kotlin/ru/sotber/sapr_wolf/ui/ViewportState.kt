@@ -16,8 +16,6 @@ class ViewportState(
     var panY by mutableStateOf(initialPanY)
 
     var isInitialized by mutableStateOf(false)
-
-    val zoom: Float get() = zoomX
     val scaleFactor: Float get() = heightScale.coerceIn(MIN_SCALE, MAX_SCALE)
     val zoomPercent: Double get() = (zoomX / BASE_ZOOM) * 100.0
 
