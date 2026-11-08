@@ -7,4 +7,43 @@
     <string name="processor">Процессор</string>
     <string name="postprocessor">Постпроцессор</string>
     <string name="calculate">Рассчитать</string>
+
+    <string name="dialog_open_project_title">Открыть проект (.json)</string>
+    <string name="dialog_save_project_title">Сохранить проект как (.json)</string>
+    <string name="dialog_default_project_filename">project.json</string>
+    <string name="dialog_continue">Продолжить</string>
+
+    <string name="dialog_normalized_title">Конструкция преобразована</string>
+    <string name="dialog_normalized_header">При загрузке файла были автоматически исправлены структурные несоответствия:</string>
+
+    <string name="dialog_load_error_title">Ошибка загрузки файла</string>
+    <string name="dialog_load_error_message">Не удалось прочитать или распознать файл проекта (.JSON). Проверьте корректность формата файла.</string>
+
+    <string name="dialog_save_error_title">Ошибка сохранения файла</string>
+    <string name="dialog_save_error_message">Не удалось сохранить файл проекта на диск.</string>
+
+    <string name="norm_cleared_empty_construction_garbage">Очищены узловые силы и опоры, так как в конструкции нет стержней</string>
+    <string name="norm_padded_node_forces">Недостающие узловые силы (%1$d шт.) заполнены значением 0.0</string>
+    <string name="norm_truncated_node_forces">Лишние узловые силы (%1$d шт.) отброшены по числу узлов</string>
+    <string name="norm_removed_invalid_supports">Удалены опоры с несуществующими индексами узлов: %1$s</string>
+    <string name="norm_replaced_node_force">Некорректная сила в узле %1$d заменена на %2$s</string>
+    <string name="norm_replaced_rod_length">Некорректная длина стержня %1$d заменена на %2$s</string>
+    <string name="norm_replaced_rod_area">Некорректная площадь сечения стержня %1$d заменена на %2$s</string>
+    <string name="norm_replaced_rod_modulus">Некорректный модуль упругости стержня %1$d заменён на %2$s</string>
+    <string name="norm_replaced_rod_allowable_stress">Некорректное допускаемое напряжение стержня %1$d заменено на %2$s</string>
+    <string name="norm_replaced_rod_distributed_load">Некорректная распределённая нагрузка стержня %1$d заменена на %2$s</string>
+
+    <string name="validation_e01_no_rods">Нет ни одного стержня. Добавьте хотя бы один стержень.</string>
+    <string name="validation_e02_invalid_length">Длина стержня %1$d должна быть строго положительной (L &gt; 0).</string>
+    <string name="validation_e03_invalid_area">Площадь поперечного сечения стержня %1$d должна быть строго положительной (A &gt; 0).</string>
+    <string name="validation_e04_invalid_modulus">Модуль упругости стержня %1$d должен быть строго положительным (E &gt; 0).</string>
+    <string name="validation_e05_invalid_allowable_stress">Допускаемое напряжение стержня %1$d должно быть строго положительным ([σ] &gt; 0).</string>
+    <string name="validation_e06_no_supports">Нет опор: конструкция может свободно перемещаться как жёсткое целое.</string>
+    <string name="validation_e07_support_out_of_range">Номер узла с опорой (%1$d) вне допустимого диапазона [0, %2$d].</string>
+    <string name="validation_e08_nan_in_rod">Некорректное значение (NaN или бесконечность) в стержне %1$d.</string>
+    <string name="validation_e08_nan_in_node">Некорректное значение внешней силы (NaN или бесконечность) в узле %1$d.</string>
+    <string name="validation_e09_forces_size_mismatch">Нарушена структура данных: количество узловых сил (%1$d) должно равняться числу узлов (%2$d).</string>
+    <string name="validation_w01_no_loads">Нагрузок нет: все перемещения узлов и внутренние усилия будут нулевыми.</string>
+    <string name="validation_w02_force_at_support">Сила приложена в узле %1$d с опорой: она будет полностью воспринята опорой.</string>
+    <string name="calculation_generic_error">Не удалось выполнить расчёт конструкции.</string>
 </resources>

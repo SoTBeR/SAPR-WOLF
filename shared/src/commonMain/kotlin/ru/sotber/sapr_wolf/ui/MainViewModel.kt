@@ -1,10 +1,13 @@
 package ru.sotber.sapr_wolf.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
@@ -12,9 +15,10 @@ import ru.sotber.sapr_wolf.model.nodeCount
 import ru.sotber.sapr_wolf.postprocessor.analyzeStrength
 import ru.sotber.sapr_wolf.postprocessor.calculateEquilibriumResidual
 import ru.sotber.sapr_wolf.postprocessor.calculateReactions
-import ru.sotber.sapr_wolf.preprocessor.ConstructionValidator
-import ru.sotber.sapr_wolf.preprocessor.ProjectFileCodec
+import ru.sotber.sapr_wolf.preprocessor.*
 import ru.sotber.sapr_wolf.processor.calculateDisplacements
+import sapr_wolf.shared.generated.resources.Res
+import sapr_wolf.shared.generated.resources.dialog_default_project_filename
 
 class MainViewModel : ViewModel() {
     private val undoStack = ArrayDeque<Construction>()
@@ -82,6 +86,7 @@ class MainViewModel : ViewModel() {
 
     fun calculate() {
         if (!_uiState.value.canCalculate) return
+
         performCalculation(targetStage = AppStage.Postprocessor)
     }
 
@@ -214,15 +219,73 @@ class MainViewModel : ViewModel() {
         )
     }
 
-    fun loadProjectFromJson(jsonString: String): Result<Unit> = runCatching {
-        val loadedConstruction = ProjectFileCodec.decode(jsonString)
+    fun openProjectFromFile() {
+        viewModelScope.launch {
+            val result = ProjectFileDialog.pickJsonFileToOpen() ?: return@launch
+
+            result
+                .onSuccess { jsonContent ->
+                    loadProjectFromJson(jsonContent)
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            fileDialogAlert = FileDialogAlert.LoadError(details = error.message),
+                        )
+                    }
+                }
+        }
+    }
+
+    fun saveProjectToFile() {
+        viewModelScope.launch {
+            val defaultFileName = runCatching { getString(Res.string.dialog_default_project_filename) }
+                .getOrDefault("project.json")
+            val jsonContent = exportProjectToJson()
+
+            val result = ProjectFileDialog.saveJsonFile(
+                defaultFileName = defaultFileName,
+                content = jsonContent,
+            ) ?: return@launch
+
+            result.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
+                    )
+                }
+            }
+        }
+    }
+
+    fun dismissFileDialogAlert() {
+        _uiState.update {
+            it.copy(fileDialogAlert = null)
+        }
+    }
+
+    fun loadProjectFromJson(jsonString: String): Result<NormalizationResult> = runCatching {
+        val normalizationResult = ProjectFileCodec.decodeAndNormalize(jsonString)
         undoStack.clear()
         redoStack.clear()
         applyConstructionState(
-            construction = loadedConstruction,
+            construction = normalizationResult.construction,
             selectedRodIndex = null,
             selectedNodeIndex = null,
+            fileDialogAlert = if (normalizationResult.wasModified) {
+                FileDialogAlert.NormalizedOnLoad(normalizationResult.changes)
+            } else {
+                null
+            },
+            incrementLoadVersion = true,
         )
+        normalizationResult
+    }.onFailure { error ->
+        _uiState.update {
+            it.copy(
+                fileDialogAlert = FileDialogAlert.LoadError(details = error.message),
+            )
+        }
     }
 
     fun exportProjectToJson(): String =
@@ -258,17 +321,20 @@ class MainViewModel : ViewModel() {
 
     private fun performCalculation(targetStage: AppStage) {
         val current = _uiState.value
+
         val issues = ConstructionValidator.validate(current.construction)
+
         if (issues.any { it.isError }) {
             _uiState.update {
                 it.copy(
                     validationIssues = issues,
                     isCalculated = false,
                     calculationState = CalculationState.Error(
-                        message = issues.first { issue -> issue.isError }.message,
+                        validationIssue = issues.first { issue -> issue.isError },
                     ),
                 )
             }
+
             return
         }
 
@@ -298,7 +364,7 @@ class MainViewModel : ViewModel() {
                         isCalculated = false,
                         validationIssues = issues,
                         calculationState = CalculationState.Error(
-                            message = error.message ?: "Не удалось выполнить расчёт конструкции.",
+                            message = error.message,
                         ),
                     )
                 }
@@ -330,6 +396,8 @@ class MainViewModel : ViewModel() {
         construction: Construction,
         selectedRodIndex: Int?,
         selectedNodeIndex: Int?,
+        fileDialogAlert: FileDialogAlert? = _uiState.value.fileDialogAlert,
+        incrementLoadVersion: Boolean = false,
     ) {
         val validRodIndex = selectedRodIndex?.takeIf { it in construction.rods.indices }
         val validNodeIndex = if (construction.rods.isEmpty()) {
@@ -350,12 +418,15 @@ class MainViewModel : ViewModel() {
                 canUndo = undoStack.isNotEmpty(),
                 canRedo = redoStack.isNotEmpty(),
                 calculationState = CalculationState.Idle,
+                fileDialogAlert = fileDialogAlert,
+                projectLoadVersion = if (incrementLoadVersion) it.projectLoadVersion + 1 else it.projectLoadVersion,
             )
         }
     }
 
     private fun createInitialState(): MainUiState {
         val initialConstruction = defaultDemoConstruction()
+
         return MainUiState(
             construction = initialConstruction,
             validationIssues = ConstructionValidator.validate(initialConstruction),
@@ -363,10 +434,10 @@ class MainViewModel : ViewModel() {
     }
 
     private fun defaultRod(): Rod = Rod(
-        length = 1.0,
-        crossSectionArea = 1.0,
-        elasticModulus = 1.0,
-        allowableStress = 160.0,
+        length = ConstructionNormalizer.DEFAULT_LENGTH,
+        crossSectionArea = ConstructionNormalizer.DEFAULT_AREA,
+        elasticModulus = ConstructionNormalizer.DEFAULT_MODULUS,
+        allowableStress = ConstructionNormalizer.DEFAULT_ALLOWABLE_STRESS,
     )
 
     companion object {

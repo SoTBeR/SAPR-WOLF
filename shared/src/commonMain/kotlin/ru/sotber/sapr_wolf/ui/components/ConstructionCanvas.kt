@@ -84,10 +84,6 @@ private object CanvasDefaults {
     const val BASE_NODAL_FORCE_TIP_HALF_HEIGHT = 5f
     const val BASE_NODAL_FORCE_TEXT_GAP_Y = 4f
 
-    const val BASE_Q_TWO_ROWS_HEIGHT = 44f
-    const val BASE_Q_THREE_ROWS_HEIGHT = 84f
-    const val MIN_SCREEN_HEIGHT_TWO_ROWS = 18f
-    const val MIN_SCREEN_HEIGHT_THREE_ROWS = 34f
     const val BASE_Q_PAD_X = 12f
     const val BASE_Q_ARROW_LEN = 16f
     const val BASE_Q_ARROW_GAP = 10f
@@ -619,7 +615,6 @@ private fun DrawScope.drawRodsAndDimensions(
                 xRight = xRight,
                 centerY = centerY,
                 rectTop = rectTop,
-                baseRodHeight = baseHeight,
                 rodHeight = rodHeight,
                 scale = scale,
                 color = palette.forceAndLoad,
@@ -817,7 +812,7 @@ private fun DrawScope.drawNodalForce(
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
-            x = startX - if (direction < 0f) 0f else text.size.width.toFloat(),
+            x = if (direction > 0f) endX - text.size.width.toFloat() else endX,
             y = centerY - text.size.height - CanvasDefaults.BASE_NODAL_FORCE_TEXT_GAP_Y * scale,
         ),
     )
@@ -830,7 +825,6 @@ private fun DrawScope.drawDistributedLoad(
     xRight: Float,
     centerY: Float,
     rectTop: Float,
-    baseRodHeight: Float,
     rodHeight: Float,
     scale: Float,
     color: Color,
@@ -838,23 +832,6 @@ private fun DrawScope.drawDistributedLoad(
 ) {
     val direction = if (load > 0) 1f else -1f
     val rodWidth = (xRight - xLeft).coerceAtLeast(1f)
-
-    val desiredRows = when {
-        baseRodHeight < CanvasDefaults.BASE_Q_TWO_ROWS_HEIGHT -> 1
-        baseRodHeight < CanvasDefaults.BASE_Q_THREE_ROWS_HEIGHT -> 2
-        else -> 3
-    }
-    val maxRowsByScreenSpace = when {
-        rodHeight < CanvasDefaults.MIN_SCREEN_HEIGHT_TWO_ROWS -> 1
-        rodHeight < CanvasDefaults.MIN_SCREEN_HEIGHT_THREE_ROWS -> 2
-        else -> 3
-    }
-    val rowCount = minOf(desiredRows, maxRowsByScreenSpace)
-    val yRows = when (rowCount) {
-        1 -> listOf(centerY)
-        2 -> listOf(centerY - rodHeight * 0.24f, centerY + rodHeight * 0.24f)
-        else -> listOf(centerY - rodHeight * 0.28f, centerY, centerY + rodHeight * 0.28f)
-    }
 
     val padX = (CanvasDefaults.BASE_Q_PAD_X * scale).coerceAtMost(rodWidth * 0.2f)
     val availableWidth = rodWidth - 2f * padX
@@ -870,27 +847,25 @@ private fun DrawScope.drawDistributedLoad(
         val tipWing = (CanvasDefaults.BASE_Q_TIP_WING * scale).coerceAtMost(rodHeight * 0.35f)
         val shaftStroke = scaledStroke(CanvasDefaults.BASE_Q_SHAFT_STROKE, scale)
 
-        for (y in yRows) {
-            for (i in 0 until count) {
-                val intervalCenter = (xLeft + padX) + (i + 0.5f) * step
-                val arrowStartX = intervalCenter - direction * (arrowLen / 2f)
-                val arrowEndX = intervalCenter + direction * (arrowLen / 2f)
+        for (i in 0 until count) {
+            val intervalCenter = (xLeft + padX) + (i + 0.5f) * step
+            val arrowStartX = intervalCenter - direction * (arrowLen / 2f)
+            val arrowEndX = intervalCenter + direction * (arrowLen / 2f)
 
-                drawLine(
-                    color = color,
-                    start = Offset(arrowStartX, y),
-                    end = Offset(arrowEndX - direction * (tipLen * 0.4f), y),
-                    strokeWidth = shaftStroke,
-                )
+            drawLine(
+                color = color,
+                start = Offset(arrowStartX, centerY),
+                end = Offset(arrowEndX - direction * (tipLen * 0.4f), centerY),
+                strokeWidth = shaftStroke,
+            )
 
-                val arrowPath = Path().apply {
-                    moveTo(arrowEndX, y)
-                    lineTo(arrowEndX - direction * tipLen, y - tipWing)
-                    lineTo(arrowEndX - direction * tipLen, y + tipWing)
-                    close()
-                }
-                drawPath(path = arrowPath, color = color)
+            val arrowPath = Path().apply {
+                moveTo(arrowEndX, centerY)
+                lineTo(arrowEndX - direction * tipLen, centerY - tipWing)
+                lineTo(arrowEndX - direction * tipLen, centerY + tipWing)
+                close()
             }
+            drawPath(path = arrowPath, color = color)
         }
     }
 

@@ -8,6 +8,8 @@ object ProjectFileCodec {
         prettyPrint = true
         ignoreUnknownKeys = true
         encodeDefaults = true
+        isLenient = true
+        allowSpecialFloatingPointValues = true
     }
 
     fun encode(construction: Construction): String =
@@ -15,4 +17,9 @@ object ProjectFileCodec {
 
     fun decode(jsonString: String): Construction =
         json.decodeFromString(Construction.serializer(), jsonString)
+
+    fun decodeAndNormalize(jsonString: String): NormalizationResult {
+        val rawConstruction = decode(jsonString)
+        return ConstructionNormalizer.normalize(rawConstruction)
+    }
 }

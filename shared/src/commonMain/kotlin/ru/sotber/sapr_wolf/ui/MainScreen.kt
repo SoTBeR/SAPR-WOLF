@@ -11,14 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.hazeSource
@@ -26,6 +19,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.ui.components.ConstructionCanvas
 import ru.sotber.sapr_wolf.ui.components.MainAppBar
+import ru.sotber.sapr_wolf.ui.components.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 
 @Composable
@@ -43,6 +37,9 @@ fun MainScreen(
         onAddRodLeft = viewModel::addRodLeft,
         onAddRodRight = viewModel::addRodRight,
         onStartProject = viewModel::startNewProject,
+        onOpenProject = viewModel::openProjectFromFile,
+        onSaveProject = viewModel::saveProjectToFile,
+        onDismissFileDialogAlert = viewModel::dismissFileDialogAlert,
         onUndo = viewModel::undo,
         onRedo = viewModel::redo,
         onSelectStage = viewModel::selectStage,
@@ -62,6 +59,7 @@ fun MainScreenContent(
     onStartProject: () -> Unit = {},
     onOpenProject: () -> Unit = {},
     onSaveProject: () -> Unit = {},
+    onDismissFileDialogAlert: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onSelectStage: (AppStage) -> Unit = {},
@@ -75,6 +73,12 @@ fun MainScreenContent(
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+    }
+
+    LaunchedEffect(uiState.projectLoadVersion) {
+        if (uiState.projectLoadVersion > 0) {
+            viewportState.resetTo1to1()
+        }
     }
 
     val mainAppBarRowsHazeState = rememberHazeState()
@@ -106,6 +110,66 @@ fun MainScreenContent(
                     } else {
                         onUndo()
                     }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Q && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onAddRodLeft()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.E && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onAddRodRight()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.N && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onStartProject()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.O && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onOpenProject()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.S && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    val isShift = keyEvent.isShiftPressed
+
+                    if (isShift) {
+                        onSaveProject() // SaveAs
+                    } else {
+                        onSaveProject()
+                    }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.T && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onToggleTheme()
 
                     true
                 } else {
@@ -157,8 +221,14 @@ fun MainScreenContent(
                 viewportState.resetTo1to1()
                 focusRequester.requestFocus()
             },
-            onOpenProject = onOpenProject,
-            onSaveProject = onSaveProject,
+            onOpenProject = {
+                onOpenProject()
+                focusRequester.requestFocus()
+            },
+            onSaveProject = {
+                onSaveProject()
+                focusRequester.requestFocus()
+            },
             onUndo = {
                 onUndo()
                 focusRequester.requestFocus()
@@ -186,5 +256,16 @@ fun MainScreenContent(
             onExportReport = onExportReport,
             onOpenSettings = onOpenSettings,
         )
+
+        val alert = uiState.fileDialogAlert
+        if (alert != null) {
+            ProjectFileAlertDialog(
+                alert = alert,
+                onDismiss = {
+                    onDismissFileDialogAlert()
+                    focusRequester.requestFocus()
+                },
+            )
+        }
     }
 }

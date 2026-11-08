@@ -103,8 +103,8 @@ class ViewportState(
 
     companion object {
         const val BASE_ZOOM = 80f
-        const val MIN_SCALE = 0.2f
-        const val MAX_SCALE = 5.0f
+        const val MIN_SCALE = 0.25f
+        const val MAX_SCALE = 9.99f
         const val MIN_ZOOM_X = BASE_ZOOM * MIN_SCALE
         const val MAX_ZOOM_X = BASE_ZOOM * MAX_SCALE
 

@@ -21,7 +21,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
-import kotlin.math.roundToInt
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeBlurStyle
@@ -34,6 +33,7 @@ import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.ui.theme.*
 import sapr_wolf.shared.generated.resources.*
+import kotlin.math.roundToInt
 
 enum class MainAppBarButtonStyle {
     Ghost,
@@ -199,7 +199,6 @@ fun MainAppBar(
             hazeState = rowsHazeState,
         ) {
             MainAppBarRowButton(
-                iconRes = Res.drawable.ic_preprocessor,
                 textRes = Res.string.preprocessor,
                 style = MainAppBarButtonStyle.Segment,
                 isSelected = selectedStage == AppStage.Preprocessor,
@@ -207,7 +206,6 @@ fun MainAppBar(
             )
 
             MainAppBarRowButton(
-                iconRes = Res.drawable.ic_processor,
                 textRes = Res.string.processor,
                 style = MainAppBarButtonStyle.Segment,
                 enabled = isProcessorEnabled,
@@ -216,7 +214,6 @@ fun MainAppBar(
             )
 
             MainAppBarRowButton(
-                iconRes = Res.drawable.ic_postprocessor,
                 textRes = Res.string.postprocessor,
                 style = MainAppBarButtonStyle.Segment,
                 enabled = isPostprocessorEnabled,
@@ -388,7 +385,7 @@ fun MainAppBarRowButton(
     val resolvedTextStyle = textStyle ?: if (isSelected || style == MainAppBarButtonStyle.Primary) {
         MaterialTheme.typography.labelMediumBold
     } else {
-        MaterialTheme.typography.labelMedium
+        MaterialTheme.typography.labelMediumBold // labelMedium
     }
 
     Surface(

@@ -1,10 +1,7 @@
 package ru.sotber.sapr_wolf.ui
 
-import ru.sotber.sapr_wolf.model.AppStage
-import ru.sotber.sapr_wolf.model.Construction
-import ru.sotber.sapr_wolf.model.Rod
-import ru.sotber.sapr_wolf.model.RodStrength
-import ru.sotber.sapr_wolf.model.ValidationIssue
+import ru.sotber.sapr_wolf.model.*
+import ru.sotber.sapr_wolf.preprocessor.NormalizationChange
 
 sealed interface CalculationState {
     data object Idle : CalculationState
@@ -17,8 +14,23 @@ sealed interface CalculationState {
     ) : CalculationState
 
     data class Error(
-        val message: String,
+        val validationIssue: ValidationIssue? = null,
+        val message: String? = null,
     ) : CalculationState
+}
+
+sealed interface FileDialogAlert {
+    data class NormalizedOnLoad(
+        val changes: List<NormalizationChange>,
+    ) : FileDialogAlert
+
+    data class LoadError(
+        val details: String? = null,
+    ) : FileDialogAlert
+
+    data class SaveError(
+        val details: String? = null,
+    ) : FileDialogAlert
 }
 
 data class MainUiState(
@@ -31,6 +43,8 @@ data class MainUiState(
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
     val calculationState: CalculationState = CalculationState.Idle,
+    val fileDialogAlert: FileDialogAlert? = null,
+    val projectLoadVersion: Int = 0,
 ) {
     val canCalculate: Boolean
         get() = validationIssues.none { it.isError }
