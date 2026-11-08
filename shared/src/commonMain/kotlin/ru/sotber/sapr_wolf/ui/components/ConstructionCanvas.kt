@@ -50,7 +50,7 @@ private object CanvasDefaults {
     const val BASE_ROD_HEIGHT_PER_AREA = 32.0
     const val MIN_BASE_ROD_HEIGHT = 20f
     const val MAX_BASE_ROD_HEIGHT = 180f
-    const val BASE_ROD_CORNER_RADIUS = 4f
+    const val BASE_ROD_CORNER_RADIUS = 0f
     const val BASE_ROD_STROKE_WIDTH = 1.4f
     const val BASE_ROD_SELECTED_STROKE_WIDTH = 2.2f
     const val BASE_ROD_BADGE_RADIUS = 11f
