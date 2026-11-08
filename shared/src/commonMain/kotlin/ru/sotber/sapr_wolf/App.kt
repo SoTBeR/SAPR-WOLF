@@ -18,7 +18,7 @@ fun App(
         val isDarkTheme = MaterialThemeExtraColors.isDark
 
         MainScreen(
-            onToggleTheme = { appViewModel.toggleTheme(isDarkTheme) },
+            onToggleTheme = { appViewModel.toggleAppTheme(isDarkTheme) },
         )
     }
 }

@@ -14,7 +14,7 @@ class AppViewModel : ViewModel() {
         _appTheme.value = theme
     }
 
-    fun toggleTheme(currentlyDark: Boolean) {
+    fun toggleAppTheme(currentlyDark: Boolean) {
         _appTheme.value = if (currentlyDark) AppTheme.LIGHT else AppTheme.DARK
     }
 }

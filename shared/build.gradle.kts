@@ -64,6 +64,9 @@ kotlin {
             implementation(libs.haze)
             implementation(libs.haze.blur)
             implementation(libs.haze.glass)
+            api(libs.filekit.core)
+            api(libs.filekit.dialogs)
+            api(libs.filekit.dialogs.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
