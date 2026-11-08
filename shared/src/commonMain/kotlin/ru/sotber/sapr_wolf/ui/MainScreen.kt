@@ -17,8 +17,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import ru.sotber.sapr_wolf.model.AppStage
+import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.ui.components.ConstructionCanvas
-import ru.sotber.sapr_wolf.ui.components.MainAppBar
+import ru.sotber.sapr_wolf.ui.components.mainAppBar.MainAppBar
 import ru.sotber.sapr_wolf.ui.components.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 
@@ -36,6 +37,12 @@ fun MainScreen(
         onClearSelection = viewModel::clearSelection,
         onAddRodLeft = viewModel::addRodLeft,
         onAddRodRight = viewModel::addRodRight,
+        onInsertRodLeft = viewModel::insertRodLeft,
+        onInsertRodRight = viewModel::insertRodRight,
+        onDeleteRod = viewModel::deleteRod,
+        onUpdateRod = viewModel::updateRod,
+        onUpdateNodeForce = viewModel::updateNodeForce,
+        onToggleFixedNode = viewModel::toggleFixedNode,
         onStartProject = viewModel::startNewProject,
         onOpenProject = viewModel::openProjectFromFile,
         onSaveProject = viewModel::saveProjectToFile,
@@ -56,6 +63,12 @@ fun MainScreenContent(
     onClearSelection: () -> Unit = {},
     onAddRodLeft: () -> Unit = {},
     onAddRodRight: () -> Unit = {},
+    onInsertRodLeft: (Int) -> Unit = {},
+    onInsertRodRight: (Int) -> Unit = {},
+    onDeleteRod: (Int) -> Unit = {},
+    onUpdateRod: (Int, Rod) -> Unit = { _, _ -> },
+    onUpdateNodeForce: (Int, Double) -> Unit = { _, _ -> },
+    onToggleFixedNode: (Int) -> Unit = {},
     onStartProject: () -> Unit = {},
     onOpenProject: () -> Unit = {},
     onSaveProject: () -> Unit = {},
@@ -209,6 +222,7 @@ fun MainScreenContent(
 
         MainAppBar(
             rowsHazeState = mainAppBarRowsHazeState,
+            construction = uiState.construction,
             selectedStage = uiState.selectedStage,
             isProcessorEnabled = uiState.isProcessorEnabled,
             isPostprocessorEnabled = uiState.isPostprocessorEnabled,
@@ -216,6 +230,38 @@ fun MainScreenContent(
             canUndo = uiState.canUndo,
             canRedo = uiState.canRedo,
             canCalculate = uiState.canCalculate,
+            selectedRodIndex = uiState.selectedRodIndex,
+            selectedNodeIndex = uiState.selectedNodeIndex,
+            onSelectRod = { rodIdx ->
+                onSelectRod(rodIdx)
+                focusRequester.requestFocus()
+            },
+            onSelectNode = { nodeIdx ->
+                onSelectNode(nodeIdx)
+                focusRequester.requestFocus()
+            },
+            onClearSelection = {
+                onClearSelection()
+                focusRequester.requestFocus()
+            },
+            onUpdateRod = onUpdateRod,
+            onInsertRodLeft = { rodIdx ->
+                onInsertRodLeft(rodIdx)
+                focusRequester.requestFocus()
+            },
+            onInsertRodRight = { rodIdx ->
+                onInsertRodRight(rodIdx)
+                focusRequester.requestFocus()
+            },
+            onDeleteRod = { rodIdx ->
+                onDeleteRod(rodIdx)
+                focusRequester.requestFocus()
+            },
+            onUpdateNodeForce = onUpdateNodeForce,
+            onToggleFixedNode = { nodeIdx ->
+                onToggleFixedNode(nodeIdx)
+                focusRequester.requestFocus()
+            },
             onStartProject = {
                 onStartProject()
                 viewportState.resetTo1to1()

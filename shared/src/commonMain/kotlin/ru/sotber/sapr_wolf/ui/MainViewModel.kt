@@ -166,6 +166,117 @@ class MainViewModel : ViewModel() {
         )
     }
 
+    fun insertRodLeft(rodIndex: Int) {
+        val construction = _uiState.value.construction
+        if (rodIndex !in construction.rods.indices) return
+
+        if (rodIndex == 0) {
+            addRodLeft()
+            return
+        }
+
+        val newRod = construction.rods[rodIndex].copy(distributedLoad = 0.0)
+        val updatedRods = construction.rods.toMutableList().apply {
+            add(rodIndex, newRod)
+        }
+        val updatedForces = MutableList(construction.nodeCount) { idx ->
+            construction.nodeForces.getOrElse(idx) { 0.0 }
+        }.apply {
+            add(rodIndex, 0.0)
+        }
+        val updatedFixedNodes = construction.fixedNodes.map { nodeIdx ->
+            if (nodeIdx > rodIndex) nodeIdx + 1 else nodeIdx
+        }.toSet()
+
+        modifyConstruction(
+            newConstruction = construction.copy(
+                rods = updatedRods,
+                nodeForces = updatedForces,
+                fixedNodes = updatedFixedNodes,
+            ),
+            transformSelectedRod = { rodIndex + 1 },
+        )
+    }
+
+    fun insertRodRight(rodIndex: Int) {
+        val construction = _uiState.value.construction
+        if (rodIndex !in construction.rods.indices) return
+
+        if (rodIndex == construction.rods.lastIndex) {
+            addRodRight()
+            return
+        }
+
+        val insertIdx = rodIndex + 1
+        val newRod = construction.rods[rodIndex].copy(distributedLoad = 0.0)
+        val updatedRods = construction.rods.toMutableList().apply {
+            add(insertIdx, newRod)
+        }
+        val updatedForces = MutableList(construction.nodeCount) { idx ->
+            construction.nodeForces.getOrElse(idx) { 0.0 }
+        }.apply {
+            add(insertIdx, 0.0)
+        }
+        val updatedFixedNodes = construction.fixedNodes.map { nodeIdx ->
+            if (nodeIdx >= insertIdx) nodeIdx + 1 else nodeIdx
+        }.toSet()
+
+        modifyConstruction(
+            newConstruction = construction.copy(
+                rods = updatedRods,
+                nodeForces = updatedForces,
+                fixedNodes = updatedFixedNodes,
+            ),
+            transformSelectedRod = { rodIndex },
+        )
+    }
+
+    fun deleteRod(rodIndex: Int) {
+        val construction = _uiState.value.construction
+        if (rodIndex !in construction.rods.indices) return
+
+        if (construction.rods.size == 1) {
+            modifyConstruction(
+                newConstruction = Construction(),
+                transformSelectedRod = { null },
+                transformSelectedNode = { null },
+            )
+            return
+        }
+
+        val updatedRods = construction.rods.filterIndexed { idx, _ -> idx != rodIndex }
+        val normalizedForces = List(construction.nodeCount) { idx ->
+            construction.nodeForces.getOrElse(idx) { 0.0 }
+        }
+        val removedNodeIndex = if (rodIndex == 0) 0 else rodIndex + 1
+        val updatedForces = normalizedForces.filterIndexed { idx, _ -> idx != removedNodeIndex }
+
+        val oldLastNodeIdx = construction.rods.size
+        val newLastNodeIdx = updatedRods.size
+        val updatedFixedNodes = buildSet {
+            for (fixedIdx in construction.fixedNodes) {
+                when {
+                    rodIndex == 0 && fixedIdx == 0 -> add(0)
+                    rodIndex == construction.rods.lastIndex && fixedIdx == oldLastNodeIdx -> add(newLastNodeIdx)
+                    fixedIdx == removedNodeIndex -> Unit
+                    fixedIdx > removedNodeIndex -> add(fixedIdx - 1)
+                    else -> add(fixedIdx)
+                }
+            }
+        }
+        val nextSelectedRod = rodIndex.coerceAtMost(updatedRods.lastIndex)
+
+        modifyConstruction(
+            newConstruction = construction.copy(
+                rods = updatedRods,
+                nodeForces = updatedForces,
+                fixedNodes = updatedFixedNodes,
+            ),
+            transformSelectedRod = { nextSelectedRod },
+            transformSelectedNode = { null },
+        )
+    }
+
     fun updateRod(rodIndex: Int, rod: Rod) {
         val construction = _uiState.value.construction
         if (rodIndex !in construction.rods.indices) return
@@ -266,8 +377,10 @@ class MainViewModel : ViewModel() {
 
     fun loadProjectFromJson(jsonString: String): Result<NormalizationResult> = runCatching {
         val normalizationResult = ProjectFileCodec.decodeAndNormalize(jsonString)
+
         undoStack.clear()
         redoStack.clear()
+
         applyConstructionState(
             construction = normalizationResult.construction,
             selectedRodIndex = null,
@@ -279,6 +392,7 @@ class MainViewModel : ViewModel() {
             },
             incrementLoadVersion = true,
         )
+
         normalizationResult
     }.onFailure { error ->
         _uiState.update {
