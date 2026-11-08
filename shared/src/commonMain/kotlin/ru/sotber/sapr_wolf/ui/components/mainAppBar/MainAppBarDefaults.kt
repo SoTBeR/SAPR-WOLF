@@ -13,6 +13,7 @@ object MainAppBarDefaults {
         isHovered: Boolean,
     ): Color {
         val colorScheme = MaterialTheme.colorScheme
+
         if (!enabled) {
             return when (style) {
                 MainAppBarButtonStyle.Primary,
@@ -58,6 +59,7 @@ object MainAppBarDefaults {
         isHovered: Boolean,
     ): Color {
         val colorScheme = MaterialTheme.colorScheme
+
         if (!enabled) {
             return colorScheme.outlineVariant
         }

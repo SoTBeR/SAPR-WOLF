@@ -60,6 +60,7 @@ private val LightColorScheme = lightColorScheme(
 
 data class SaprExtraColors(
     val isDark: Boolean,
+    val warning: Color,
     val canvasBase: Color,
     val canvasDots: Color,
     val tensionLine: Color,
@@ -72,6 +73,7 @@ data class SaprExtraColors(
 
 val DarkSaprExtraColors = SaprExtraColors(
     isDark = true,
+    warning = WarningDark,
     canvasBase = CanvasBaseDark,
     canvasDots = CanvasDotsDark,
     tensionLine = TensionLineDark,
@@ -84,6 +86,7 @@ val DarkSaprExtraColors = SaprExtraColors(
 
 val LightSaprExtraColors = SaprExtraColors(
     isDark = false,
+    warning = WarningLight,
     canvasBase = CanvasBaseLight,
     canvasDots = CanvasDotsLight,
     tensionLine = TensionLineLight,

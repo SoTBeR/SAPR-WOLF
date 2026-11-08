@@ -15,6 +15,7 @@ import dev.chrisbanes.haze.HazeState
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
+import ru.sotber.sapr_wolf.model.ValidationIssue
 import ru.sotber.sapr_wolf.model.nodeCount
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
@@ -34,6 +35,7 @@ fun MainAppBar(
     canUndo: Boolean = true,
     canRedo: Boolean = true,
     canCalculate: Boolean = true,
+    validationIssues: List<ValidationIssue> = emptyList(),
     selectedRodIndex: Int? = null,
     selectedNodeIndex: Int? = null,
     onSelectRod: (Int) -> Unit = {},
@@ -68,6 +70,7 @@ fun MainAppBar(
         ).size.width
     }
 
+    var leftRowWidthPx by remember { mutableIntStateOf(0) }
     var rightRowWidthPx by remember { mutableIntStateOf(0) }
 
     Row(
@@ -80,40 +83,63 @@ fun MainAppBar(
                 vertical = MaterialThemeSpacing.floatingMargin,
             ),
     ) {
-        MainAppBarRow(
-            hazeState = rowsHazeState,
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.SpaceBetween,
+            modifier = if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty()) {
+                Modifier.fillMaxHeight()
+            } else {
+                Modifier
+            },
         ) {
-            MainAppBarButton(
-                iconRes = Res.drawable.ic_start_project,
-                textRes = Res.string.start_project,
-                onClick = onStartProject,
-            )
+            MainAppBarRow(
+                hazeState = rowsHazeState,
+                modifier = Modifier.onSizeChanged { size ->
+                    leftRowWidthPx = size.width
+                },
+            ) {
+                MainAppBarButton(
+                    iconRes = Res.drawable.ic_start_project,
+                    textRes = Res.string.start_project,
+                    onClick = onStartProject,
+                )
 
-            MainAppBarButton(
-                iconRes = Res.drawable.ic_open_project,
-                textRes = Res.string.open_project,
-                onClick = onOpenProject,
-            )
+                MainAppBarButton(
+                    iconRes = Res.drawable.ic_open_project,
+                    textRes = Res.string.open_project,
+                    onClick = onOpenProject,
+                )
 
-            MainAppBarButton(
-                iconRes = Res.drawable.ic_save_project,
-                textRes = Res.string.save_project,
-                onClick = onSaveProject,
-            )
+                MainAppBarButton(
+                    iconRes = Res.drawable.ic_save_project,
+                    textRes = Res.string.save_project,
+                    onClick = onSaveProject,
+                )
 
-            MainAppBarRowDivider()
+                MainAppBarRowDivider()
 
-            MainAppBarIconButton(
-                iconRes = Res.drawable.ic_undo,
-                enabled = canUndo,
-                onClick = onUndo,
-            )
+                MainAppBarIconButton(
+                    iconRes = Res.drawable.ic_undo,
+                    enabled = canUndo,
+                    onClick = onUndo,
+                )
 
-            MainAppBarIconButton(
-                iconRes = Res.drawable.ic_redo,
-                enabled = canRedo,
-                onClick = onRedo,
-            )
+                MainAppBarIconButton(
+                    iconRes = Res.drawable.ic_redo,
+                    enabled = canRedo,
+                    onClick = onRedo,
+                )
+            }
+
+            if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty() && leftRowWidthPx > 0) {
+                val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
+
+                MainAppBarValidationIssues(
+                    hazeState = rowsHazeState,
+                    issues = validationIssues,
+                    modifier = Modifier.width(leftPanelWidth),
+                )
+            }
         }
 
         MainAppBarRow(

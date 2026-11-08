@@ -8,18 +8,34 @@
     <string name="postprocessor">Постпроцессор</string>
     <string name="calculate">Рассчитать</string>
 
+    <string name="inspector_tab_rod">Стержень</string>
+    <string name="inspector_tab_node">Узел</string>
+    <string name="inspector_rod_title">Стержень №%1$d</string>
+    <string name="inspector_node_title">Узел №%1$d</string>
+    <string name="inspector_field_length">Длина</string>
+    <string name="inspector_field_area">Площадь ПС</string>
+    <string name="inspector_field_modulus">Модуль Юнга</string>
+    <string name="inspector_field_allowable_stress">Допуск</string>
+    <string name="inspector_field_distributed_load">Нагрузка</string>
+    <string name="inspector_add_rod">Добавить стержень</string>
+    <string name="inspector_add_rod_left">Слева</string>
+    <string name="inspector_add_rod_right">Справа</string>
+    <string name="inspector_delete_rod">Удалить стержень</string>
+    <string name="inspector_field_node_force">Сила</string>
+    <string name="inspector_field_node_support">Опора?</string>
+
     <string name="dialog_open_project_title">Открыть проект (.json)</string>
     <string name="dialog_save_project_title">Сохранить проект как (.json)</string>
     <string name="dialog_default_project_filename">project.json</string>
     <string name="dialog_continue">Продолжить</string>
 
     <string name="dialog_normalized_title">Конструкция преобразована</string>
-    <string name="dialog_normalized_header">При загрузке файла были автоматически исправлены структурные несоответствия:</string>
+    <string name="dialog_normalized_header">При загрузке файла проекта были автоматически исправлены следующие ошибки:</string>
 
-    <string name="dialog_load_error_title">Ошибка загрузки файла</string>
+    <string name="dialog_load_error_title">Ошибка загрузки файла проекта</string>
     <string name="dialog_load_error_message">Не удалось прочитать или распознать файл проекта (.JSON). Проверьте корректность формата файла.</string>
 
-    <string name="dialog_save_error_title">Ошибка сохранения файла</string>
+    <string name="dialog_save_error_title">Ошибка сохранения файла проекта</string>
     <string name="dialog_save_error_message">Не удалось сохранить файл проекта на диск.</string>
 
     <string name="norm_cleared_empty_construction_garbage">Очищены узловые силы и опоры, так как в конструкции нет стержней</string>
@@ -34,16 +50,16 @@
     <string name="norm_replaced_rod_distributed_load">Некорректная распределённая нагрузка стержня %1$d заменена на %2$s</string>
 
     <string name="validation_e01_no_rods">Нет ни одного стержня. Добавьте хотя бы один стержень.</string>
-    <string name="validation_e02_invalid_length">Длина стержня %1$d должна быть строго положительной (L &gt; 0).</string>
-    <string name="validation_e03_invalid_area">Площадь поперечного сечения стержня %1$d должна быть строго положительной (A &gt; 0).</string>
-    <string name="validation_e04_invalid_modulus">Модуль упругости стержня %1$d должен быть строго положительным (E &gt; 0).</string>
-    <string name="validation_e05_invalid_allowable_stress">Допускаемое напряжение стержня %1$d должно быть строго положительным ([σ] &gt; 0).</string>
-    <string name="validation_e06_no_supports">Нет опор: конструкция может свободно перемещаться как жёсткое целое.</string>
+    <string name="validation_e02_invalid_length">Длина стержня %1$d должна быть положительной (L &gt; 0).</string>
+    <string name="validation_e03_invalid_area">Площадь поперечного сечения стержня %1$d должна быть положительной (A &gt; 0).</string>
+    <string name="validation_e04_invalid_modulus">Модуль упругости стержня %1$d должен быть положительным (E &gt; 0).</string>
+    <string name="validation_e05_invalid_allowable_stress">Допускаемое напряжение стержня %1$d должно быть положительным (σ &gt; 0).</string>
+    <string name="validation_e06_no_supports">Нет опор: конструкция может свободно перемещаться.</string>
     <string name="validation_e07_support_out_of_range">Номер узла с опорой (%1$d) вне допустимого диапазона [0, %2$d].</string>
     <string name="validation_e08_nan_in_rod">Некорректное значение (NaN или бесконечность) в стержне %1$d.</string>
     <string name="validation_e08_nan_in_node">Некорректное значение внешней силы (NaN или бесконечность) в узле %1$d.</string>
-    <string name="validation_e09_forces_size_mismatch">Нарушена структура данных: количество узловых сил (%1$d) должно равняться числу узлов (%2$d).</string>
-    <string name="validation_w01_no_loads">Нагрузок нет: все перемещения узлов и внутренние усилия будут нулевыми.</string>
-    <string name="validation_w02_force_at_support">Сила приложена в узле %1$d с опорой: она будет полностью воспринята опорой.</string>
+    <string name="validation_e09_forces_size_mismatch">Нарушена структура данных: количество приложенных сил (%1$d) должно равняться числу узлов (%2$d).</string>
+    <string name="validation_w01_no_loads">Нет нагрузок: все перемещения узлов будут нулевыми.</string>
+    <string name="validation_w02_force_at_support">Сила приложена в узле %1$d с опорой: она будет поглощена.</string>
     <string name="calculation_generic_error">Не удалось выполнить расчёт конструкции.</string>
 </resources>

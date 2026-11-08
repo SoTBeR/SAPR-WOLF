@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -31,6 +30,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,6 +42,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
 import ru.sotber.sapr_wolf.ui.theme.FieldShape
@@ -48,6 +54,21 @@ import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.ic_back
 import sapr_wolf.shared.generated.resources.ic_close
 import sapr_wolf.shared.generated.resources.ic_forward
+import sapr_wolf.shared.generated.resources.inspector_add_rod
+import sapr_wolf.shared.generated.resources.inspector_add_rod_left
+import sapr_wolf.shared.generated.resources.inspector_add_rod_right
+import sapr_wolf.shared.generated.resources.inspector_delete_rod
+import sapr_wolf.shared.generated.resources.inspector_field_allowable_stress
+import sapr_wolf.shared.generated.resources.inspector_field_area
+import sapr_wolf.shared.generated.resources.inspector_field_distributed_load
+import sapr_wolf.shared.generated.resources.inspector_field_length
+import sapr_wolf.shared.generated.resources.inspector_field_modulus
+import sapr_wolf.shared.generated.resources.inspector_field_node_force
+import sapr_wolf.shared.generated.resources.inspector_field_node_support
+import sapr_wolf.shared.generated.resources.inspector_node_title
+import sapr_wolf.shared.generated.resources.inspector_rod_title
+import sapr_wolf.shared.generated.resources.inspector_tab_node
+import sapr_wolf.shared.generated.resources.inspector_tab_rod
 
 enum class InspectorTab {
     Rod,
@@ -93,7 +114,7 @@ fun MainAppBarInspectorHeader(
             .padding(2.dp),
     ) {
         MainAppBarButton(
-            text = "Стержень",
+            textRes = Res.string.inspector_tab_rod,
             isSelected = activeTab == InspectorTab.Rod,
             style = MainAppBarButtonStyle.Segment,
             textStyle = MaterialTheme.typography.labelMediumBold,
@@ -103,7 +124,7 @@ fun MainAppBarInspectorHeader(
         )
 
         MainAppBarButton(
-            text = "Узел",
+            textRes = Res.string.inspector_tab_node,
             isSelected = activeTab == InspectorTab.Node,
             style = MainAppBarButtonStyle.Segment,
             textStyle = MaterialTheme.typography.labelMediumBold,
@@ -141,28 +162,43 @@ fun MainAppBarInspectorHeader(
     }
 }
 
-private const val DEFAULT_MAX_INPUT_LENGTH = 12
+@Composable
+fun MainAppBarInspectorFieldRow(
+    modifier: Modifier = Modifier,
+    labelRes: StringResource,
+    value: Double,
+    elementKey: Any,
+    onValueChange: (Double) -> Unit,
+    allowNegative: Boolean = false,
+    allowZero: Boolean = false,
+) {
+    MainAppBarInspectorFieldRow(
+        label = stringResource(labelRes),
+        value = value,
+        elementKey = elementKey,
+        onValueChange = onValueChange,
+        allowNegative = allowNegative,
+        allowZero = allowZero,
+        modifier = modifier,
+    )
+}
 
 @Composable
 fun MainAppBarInspectorFieldRow(
+    modifier: Modifier = Modifier,
     label: String,
     value: Double,
     elementKey: Any,
     onValueChange: (Double) -> Unit,
     allowNegative: Boolean = false,
     allowZero: Boolean = false,
-    maxLength: Int = DEFAULT_MAX_INPUT_LENGTH,
-    modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
     var text by remember(elementKey) { mutableStateOf(value.toString()) }
-    var isFocused by remember { mutableStateOf(false) }
+    var isFocused by remember(elementKey) { mutableStateOf(false) }
 
     LaunchedEffect(elementKey, value) {
-        val currentParsed = text.replace(',', '.').toDoubleOrNull()
-        if (currentParsed != value) {
-            text = value.toString()
-        }
+        text = value.toString()
     }
 
     Row(
@@ -201,24 +237,13 @@ fun MainAppBarInspectorFieldRow(
             BasicTextField(
                 value = text,
                 onValueChange = { rawInput ->
-                    val filtered = rawInput
-                        .filter { ch ->
-                            ch.isDigit() || ch == '.' || ch == ',' || (allowNegative && ch == '-')
-                        }
-                        .take(maxLength)
-                    text = filtered
-
-                    val parsed = filtered.replace(',', '.').toDoubleOrNull()
-                    if (parsed != null && parsed.isFinite()) {
-                        val isValid = when {
-                            !allowNegative && !allowZero -> parsed > 0.0
-                            !allowNegative && allowZero -> parsed >= 0.0
-                            !allowZero -> parsed != 0.0
-                            else -> true
-                        }
-                        if (isValid && parsed != value) {
-                            onValueChange(parsed)
-                        }
+                    text = rawInput.filterIndexed { index, ch ->
+                        ch.isDigit() ||
+                            ch == '.' ||
+                            ch == ',' ||
+                            ch == 'e' ||
+                            ch == 'E' ||
+                            (ch == '-' && (allowNegative || (index > 0 && (rawInput[index - 1] == 'e' || rawInput[index - 1] == 'E'))))
                     }
                 },
                 singleLine = true,
@@ -236,6 +261,14 @@ fun MainAppBarInspectorFieldRow(
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onPreviewKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.Enter || keyEvent.key == Key.NumPadEnter)) {
+                            focusManager.clearFocus()
+                            true
+                        } else {
+                            false
+                        }
+                    }
                     .onFocusChanged { focusState ->
                         if (isFocused && !focusState.isFocused) {
                             val currentParsed = text.replace(',', '.').toDoubleOrNull()
@@ -245,7 +278,12 @@ fun MainAppBarInspectorFieldRow(
                                 !allowZero -> currentParsed != 0.0
                                 else -> true
                             }
-                            if (!isValid || currentParsed != value) {
+                            if (isValid) {
+                                if (currentParsed != value) {
+                                    onValueChange(currentParsed)
+                                }
+                                text = currentParsed.toString()
+                            } else {
                                 text = value.toString()
                             }
                         }
@@ -282,7 +320,7 @@ fun MainAppBarRodInspector(
     ) {
         MainAppBarInspectorHeader(
             activeTab = InspectorTab.Rod,
-            title = "Стержень №${rodIndex + 1}",
+            title = stringResource(Res.string.inspector_rod_title, rodIndex + 1),
             canGoPrevious = rodIndex > 0,
             canGoNext = rodIndex < rodsCount - 1,
             onSelectTab = { tab ->
@@ -313,7 +351,7 @@ fun MainAppBarRodInspector(
             modifier = Modifier.fillMaxWidth(),
         ) {
             MainAppBarInspectorFieldRow(
-                label = "Длина",
+                labelRes = Res.string.inspector_field_length,
                 value = rod.length,
                 elementKey = rodIndex,
                 onValueChange = { newLength ->
@@ -321,7 +359,7 @@ fun MainAppBarRodInspector(
                 },
             )
             MainAppBarInspectorFieldRow(
-                label = "Площадь ПС",
+                labelRes = Res.string.inspector_field_area,
                 value = rod.crossSectionArea,
                 elementKey = rodIndex,
                 onValueChange = { newArea ->
@@ -329,7 +367,7 @@ fun MainAppBarRodInspector(
                 },
             )
             MainAppBarInspectorFieldRow(
-                label = "Модуль Юнга",
+                labelRes = Res.string.inspector_field_modulus,
                 value = rod.elasticModulus,
                 elementKey = rodIndex,
                 onValueChange = { newModulus ->
@@ -337,7 +375,7 @@ fun MainAppBarRodInspector(
                 },
             )
             MainAppBarInspectorFieldRow(
-                label = "Допуск",
+                labelRes = Res.string.inspector_field_allowable_stress,
                 value = rod.allowableStress,
                 elementKey = rodIndex,
                 onValueChange = { newAllowableStress ->
@@ -345,7 +383,7 @@ fun MainAppBarRodInspector(
                 },
             )
             MainAppBarInspectorFieldRow(
-                label = "Нагрузка",
+                labelRes = Res.string.inspector_field_distributed_load,
                 value = rod.distributedLoad,
                 elementKey = rodIndex,
                 allowNegative = true,
@@ -366,7 +404,7 @@ fun MainAppBarRodInspector(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = "Добавить стержень",
+                text = stringResource(Res.string.inspector_add_rod),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -380,7 +418,7 @@ fun MainAppBarRodInspector(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 MainAppBarButton(
-                    text = "Слева",
+                    textRes = Res.string.inspector_add_rod_left,
                     style = MainAppBarButtonStyle.Tonal,
                     shape = FieldShape,
                     textStyle = MaterialTheme.typography.labelMediumBold,
@@ -390,7 +428,7 @@ fun MainAppBarRodInspector(
                 )
 
                 MainAppBarButton(
-                    text = "Справа",
+                    textRes = Res.string.inspector_add_rod_right,
                     style = MainAppBarButtonStyle.Tonal,
                     shape = FieldShape,
                     textStyle = MaterialTheme.typography.labelMediumBold,
@@ -401,7 +439,7 @@ fun MainAppBarRodInspector(
             }
 
             MainAppBarButton(
-                text = "Удалить стержень",
+                textRes = Res.string.inspector_delete_rod,
                 style = MainAppBarButtonStyle.DestructiveTonal,
                 shape = FieldShape,
                 textStyle = MaterialTheme.typography.labelMediumBold,
@@ -433,7 +471,7 @@ fun MainAppBarNodeInspector(
     ) {
         MainAppBarInspectorHeader(
             activeTab = InspectorTab.Node,
-            title = "Узел №${nodeIndex + 1}",
+            title = stringResource(Res.string.inspector_node_title, nodeIndex + 1),
             canGoPrevious = nodeIndex > 0,
             canGoNext = nodeIndex < nodesCount - 1,
             onSelectTab = { tab ->
@@ -464,7 +502,7 @@ fun MainAppBarNodeInspector(
             modifier = Modifier.fillMaxWidth(),
         ) {
             MainAppBarInspectorFieldRow(
-                label = "Сила",
+                labelRes = Res.string.inspector_field_node_force,
                 value = nodeForce,
                 elementKey = nodeIndex,
                 allowNegative = true,
@@ -478,7 +516,7 @@ fun MainAppBarNodeInspector(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    text = "Заделка?",
+                    text = stringResource(Res.string.inspector_field_node_support),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

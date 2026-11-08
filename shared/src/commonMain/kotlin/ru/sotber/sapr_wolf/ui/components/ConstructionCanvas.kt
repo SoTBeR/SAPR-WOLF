@@ -48,8 +48,8 @@ private object CanvasDefaults {
     const val FLOAT_EPSILON = 1e-9
 
     const val BASE_ROD_HEIGHT_PER_AREA = 32.0
-    const val MIN_BASE_ROD_HEIGHT = 20f
-    const val MAX_BASE_ROD_HEIGHT = 180f
+    // const val MIN_BASE_ROD_HEIGHT = 20f
+    // const val MAX_BASE_ROD_HEIGHT = 180f
     const val BASE_ROD_CORNER_RADIUS = 0f
     const val BASE_ROD_STROKE_WIDTH = 1.4f
     const val BASE_ROD_SELECTED_STROKE_WIDTH = 2.2f
@@ -461,7 +461,7 @@ private fun handleCanvasTap(
 private fun baseRodHeight(rod: Rod): Float {
     return (rod.crossSectionArea * CanvasDefaults.BASE_ROD_HEIGHT_PER_AREA)
         .toFloat()
-        .coerceIn(CanvasDefaults.MIN_BASE_ROD_HEIGHT, CanvasDefaults.MAX_BASE_ROD_HEIGHT)
+        // .coerceIn(CanvasDefaults.MIN_BASE_ROD_HEIGHT, CanvasDefaults.MAX_BASE_ROD_HEIGHT)
 }
 
 private fun rodScreenHeight(rod: Rod, scale: Float): Float = baseRodHeight(rod) * scale
@@ -808,7 +808,7 @@ private fun DrawScope.drawNodalForce(
     }
     drawPath(path = arrowPath, color = color)
 
-    val text = textMeasurer.measure("F = $force", textStyle.copy(color = color))
+    val text = textMeasurer.measure("F = ${abs(force)}", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
@@ -869,7 +869,7 @@ private fun DrawScope.drawDistributedLoad(
         }
     }
 
-    val text = textMeasurer.measure("q = $load", textStyle.copy(color = color))
+    val text = textMeasurer.measure("q = ${abs(load)}", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(

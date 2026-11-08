@@ -322,9 +322,9 @@ class MainViewModel : ViewModel() {
         )
     }
 
-    fun startNewProject() {
+    fun startNewProject(defaultConstruction: Boolean = false) {
         modifyConstruction(
-            newConstruction = Construction(),
+            newConstruction = if (defaultConstruction) defaultDemoConstruction() else Construction(),
             transformSelectedRod = { null },
             transformSelectedNode = { null },
         )

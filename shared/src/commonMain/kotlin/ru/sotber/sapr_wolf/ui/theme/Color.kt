@@ -20,6 +20,7 @@ val OutlineVariantDark = Color(1f, 1f, 1f, 0.18f)
 
 val ErrorDark = Color(0xFFF7768E)
 val OnErrorDark = Color(0xFF0B0B0D)
+val WarningDark = Color(0xFFE0AF68)
 
 val BackgroundLight = Color(0xFFF2F2F4)
 val OnBackgroundLight = Color(0xFF111113)
@@ -39,6 +40,7 @@ val OutlineVariantLight = Color(0f, 0f, 0f, 0.16f)
 
 val ErrorLight = Color(0xFFD92D20)
 val OnErrorLight = Color(0xFFFFFFFF)
+val WarningLight = Color(0xFFD97706)
 
 val CanvasBaseDark = Color(0xFF101012)
 val CanvasDotsDark = Color(1f, 1f, 1f, 0.07f)

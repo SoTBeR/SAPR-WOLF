@@ -69,7 +69,7 @@ fun MainScreenContent(
     onUpdateRod: (Int, Rod) -> Unit = { _, _ -> },
     onUpdateNodeForce: (Int, Double) -> Unit = { _, _ -> },
     onToggleFixedNode: (Int) -> Unit = {},
-    onStartProject: () -> Unit = {},
+    onStartProject: (Boolean) -> Unit = {},
     onOpenProject: () -> Unit = {},
     onSaveProject: () -> Unit = {},
     onDismissFileDialogAlert: () -> Unit = {},
@@ -149,7 +149,9 @@ fun MainScreenContent(
             }
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.N && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
-                    onStartProject()
+                    val isShift = keyEvent.isShiftPressed
+
+                    onStartProject(isShift)
 
                     true
                 } else {
@@ -199,24 +201,24 @@ fun MainScreenContent(
             selectedRodIndex = uiState.selectedRodIndex,
             selectedNodeIndex = uiState.selectedNodeIndex,
             onSelectRod = { rodIdx ->
-                onSelectRod(rodIdx)
                 focusRequester.requestFocus()
+                onSelectRod(rodIdx)
             },
             onSelectNode = { nodeIdx ->
-                onSelectNode(nodeIdx)
                 focusRequester.requestFocus()
+                onSelectNode(nodeIdx)
             },
             onClearSelection = {
-                onClearSelection()
                 focusRequester.requestFocus()
+                onClearSelection()
             },
             onAddRodLeft = {
-                onAddRodLeft()
                 focusRequester.requestFocus()
+                onAddRodLeft()
             },
             onAddRodRight = {
-                onAddRodRight()
                 focusRequester.requestFocus()
+                onAddRodRight()
             },
         )
 
@@ -230,74 +232,75 @@ fun MainScreenContent(
             canUndo = uiState.canUndo,
             canRedo = uiState.canRedo,
             canCalculate = uiState.canCalculate,
+            validationIssues = uiState.validationIssues,
             selectedRodIndex = uiState.selectedRodIndex,
             selectedNodeIndex = uiState.selectedNodeIndex,
             onSelectRod = { rodIdx ->
-                onSelectRod(rodIdx)
                 focusRequester.requestFocus()
+                onSelectRod(rodIdx)
             },
             onSelectNode = { nodeIdx ->
-                onSelectNode(nodeIdx)
                 focusRequester.requestFocus()
+                onSelectNode(nodeIdx)
             },
             onClearSelection = {
-                onClearSelection()
                 focusRequester.requestFocus()
+                onClearSelection()
             },
             onUpdateRod = onUpdateRod,
             onInsertRodLeft = { rodIdx ->
-                onInsertRodLeft(rodIdx)
                 focusRequester.requestFocus()
+                onInsertRodLeft(rodIdx)
             },
             onInsertRodRight = { rodIdx ->
-                onInsertRodRight(rodIdx)
                 focusRequester.requestFocus()
+                onInsertRodRight(rodIdx)
             },
             onDeleteRod = { rodIdx ->
-                onDeleteRod(rodIdx)
                 focusRequester.requestFocus()
+                onDeleteRod(rodIdx)
             },
             onUpdateNodeForce = onUpdateNodeForce,
             onToggleFixedNode = { nodeIdx ->
-                onToggleFixedNode(nodeIdx)
                 focusRequester.requestFocus()
+                onToggleFixedNode(nodeIdx)
             },
             onStartProject = {
-                onStartProject()
-                viewportState.resetTo1to1()
                 focusRequester.requestFocus()
+                onStartProject(false)
+                viewportState.resetTo1to1()
             },
             onOpenProject = {
-                onOpenProject()
                 focusRequester.requestFocus()
+                onOpenProject()
             },
             onSaveProject = {
-                onSaveProject()
                 focusRequester.requestFocus()
+                onSaveProject()
             },
             onUndo = {
-                onUndo()
                 focusRequester.requestFocus()
+                onUndo()
             },
             onRedo = {
-                onRedo()
                 focusRequester.requestFocus()
+                onRedo()
             },
             onSelectStage = { stage ->
-                onSelectStage(stage)
                 focusRequester.requestFocus()
+                onSelectStage(stage)
             },
             onCalculate = {
-                onCalculate()
                 focusRequester.requestFocus()
+                onCalculate()
             },
             onResetScale = {
-                viewportState.resetTo1to1()
                 focusRequester.requestFocus()
+                viewportState.resetTo1to1()
             },
             onToggleTheme = {
-                onToggleTheme()
                 focusRequester.requestFocus()
+                onToggleTheme()
             },
             onExportReport = onExportReport,
             onOpenSettings = onOpenSettings,
