@@ -12,16 +12,16 @@
     <string name="inspector_tab_node">Узел</string>
     <string name="inspector_rod_title">Стержень №%1$d</string>
     <string name="inspector_node_title">Узел №%1$d</string>
-    <string name="inspector_field_length">Длина</string>
-    <string name="inspector_field_area">Площадь ПС</string>
-    <string name="inspector_field_modulus">Модуль Юнга</string>
-    <string name="inspector_field_allowable_stress">Допуск</string>
-    <string name="inspector_field_distributed_load">Нагрузка</string>
+    <string name="inspector_field_length">Длина L</string>
+    <string name="inspector_field_area">Сечение A</string>
+    <string name="inspector_field_modulus">Модуль E</string>
+    <string name="inspector_field_allowable_stress">Напряжение σ</string>
+    <string name="inspector_field_distributed_load">Нагрузка q</string>
     <string name="inspector_add_rod">Добавить стержень</string>
     <string name="inspector_add_rod_left">Слева</string>
     <string name="inspector_add_rod_right">Справа</string>
     <string name="inspector_delete_rod">Удалить стержень</string>
-    <string name="inspector_field_node_force">Сила</string>
+    <string name="inspector_field_node_force">Сила F</string>
     <string name="inspector_field_node_support">Опора?</string>
 
     <string name="dialog_open_project_title">Открыть проект (.json)</string>

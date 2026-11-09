@@ -191,6 +191,17 @@ fun MainScreenContent(
                     false
                 }
             }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete)) {
+                    uiState.selectedRodIndex?.let {
+                        onDeleteRod(it)
+                    }
+
+                    true
+                } else {
+                    false
+                }
+            }
     ) {
         ConstructionCanvas(
             modifier = Modifier

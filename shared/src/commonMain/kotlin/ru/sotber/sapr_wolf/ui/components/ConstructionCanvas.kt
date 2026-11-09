@@ -45,7 +45,7 @@ private object CanvasDefaults {
 
     const val BASE_FONT_SIZE_SP = 12f
     const val MIN_STROKE_WIDTH = 0.75f
-    const val FLOAT_EPSILON = 1e-9
+    const val FLOAT_EPSILON = 5E-82
 
     const val BASE_ROD_HEIGHT_PER_AREA = 32.0
     // const val MIN_BASE_ROD_HEIGHT = 20f
@@ -79,10 +79,10 @@ private object CanvasDefaults {
     const val BASE_SUPPORT_HATCH_STROKE = 1.4f
 
     const val BASE_NODAL_FORCE_ARROW_LEN = 52f
-    const val BASE_NODAL_FORCE_SHAFT_STROKE = 2.4f
+    const val BASE_NODAL_FORCE_SHAFT_STROKE = 5f
     const val BASE_NODAL_FORCE_TIP_LEN = 9f
-    const val BASE_NODAL_FORCE_TIP_HALF_HEIGHT = 5f
-    const val BASE_NODAL_FORCE_TEXT_GAP_Y = 4f
+    const val BASE_NODAL_FORCE_TIP_HALF_HEIGHT = 9f
+    const val BASE_NODAL_FORCE_TEXT_GAP_Y = 12f
 
     const val BASE_Q_PAD_X = 12f
     const val BASE_Q_ARROW_LEN = 16f
@@ -486,7 +486,7 @@ private fun leftAddButtonCenterX(
 ): Float {
     val firstNodeX = viewportState.worldToScreenX(0.0, canvasWidth, totalLength)
     val firstNodeForce = construction.nodeForces.firstOrNull() ?: 0.0
-    val forceClearance = if (firstNodeForce > CanvasDefaults.FLOAT_EPSILON) {
+    val forceClearance = if (firstNodeForce < -CanvasDefaults.FLOAT_EPSILON) {
         CanvasDefaults.BASE_NODAL_FORCE_ARROW_LEN * scale
     } else {
         0f
@@ -504,7 +504,7 @@ private fun rightAddButtonCenterX(
     val lastNodeX = viewportState.worldToScreenX(totalLength, canvasWidth, totalLength)
     val lastNodeIdx = construction.nodeCount - 1
     val lastNodeForce = construction.nodeForces.getOrNull(lastNodeIdx) ?: 0.0
-    val forceClearance = if (lastNodeForce < -CanvasDefaults.FLOAT_EPSILON) {
+    val forceClearance = if (lastNodeForce > CanvasDefaults.FLOAT_EPSILON) {
         CanvasDefaults.BASE_NODAL_FORCE_ARROW_LEN * scale
     } else {
         0f
@@ -788,8 +788,10 @@ private fun DrawScope.drawNodalForce(
     val direction = if (force > 0) 1f else -1f
     val nodeHalfSize = CanvasDefaults.BASE_NODE_SIZE * scale / 2f
     val arrowLen = CanvasDefaults.BASE_NODAL_FORCE_ARROW_LEN * scale
-    val endX = nodeX - direction * nodeHalfSize
-    val startX = endX - direction * arrowLen
+
+    val startX = nodeX + direction * nodeHalfSize
+    val endX = startX + direction * arrowLen
+
     val tipLen = CanvasDefaults.BASE_NODAL_FORCE_TIP_LEN * scale
     val tipHalfHeight = CanvasDefaults.BASE_NODAL_FORCE_TIP_HALF_HEIGHT * scale
 
@@ -808,12 +810,12 @@ private fun DrawScope.drawNodalForce(
     }
     drawPath(path = arrowPath, color = color)
 
-    val text = textMeasurer.measure("F = ${abs(force)}", textStyle.copy(color = color))
+    val text = textMeasurer.measure("${abs(force)}F", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
-            x = if (direction > 0f) endX - text.size.width.toFloat() else endX,
-            y = centerY - text.size.height - CanvasDefaults.BASE_NODAL_FORCE_TEXT_GAP_Y * scale,
+            x = if (direction > 0f) startX else startX - text.size.width.toFloat(),
+            y = centerY - text.size.height.toFloat() - CanvasDefaults.BASE_NODAL_FORCE_TEXT_GAP_Y * scale,
         ),
     )
 }
@@ -869,7 +871,7 @@ private fun DrawScope.drawDistributedLoad(
         }
     }
 
-    val text = textMeasurer.measure("q = ${abs(load)}", textStyle.copy(color = color))
+    val text = textMeasurer.measure("${abs(load)}q", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
