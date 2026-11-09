@@ -675,7 +675,7 @@ private fun DrawScope.drawRodsAndDimensions(
         )
 
         val lengthText = textMeasurer.measure(
-            text = "L = ${rod.length}",
+            text = "${rod.length}L",
             style = textStyle.copy(color = palette.dimension),
         )
         drawText(
