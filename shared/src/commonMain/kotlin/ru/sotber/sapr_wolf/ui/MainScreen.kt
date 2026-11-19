@@ -192,7 +192,7 @@ fun MainScreenContent(
                 }
             }
             .onPreviewKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown && (keyEvent.key == Key.Backspace || keyEvent.key == Key.Delete)) {
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Delete) {
                     uiState.selectedRodIndex?.let {
                         onDeleteRod(it)
                     }
