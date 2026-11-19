@@ -1,7 +1,9 @@
 <resources>
     <string name="app_name">SAPR-WOLF</string>
+    <string name="file_menu">Файл</string>
     <string name="open_project">Открыть</string>
     <string name="save_project">Сохранить</string>
+    <string name="save_project_as">Сохранить как</string>
     <string name="start_project">Начать</string>
     <string name="preprocessor">Препроцессор</string>
     <string name="processor">Процессор</string>
@@ -62,4 +64,34 @@
     <string name="validation_w01_no_loads">Нет нагрузок: все перемещения узлов будут нулевыми.</string>
     <string name="validation_w02_force_at_support">Сила приложена в узле %1$d с опорой: она будет поглощена.</string>
     <string name="calculation_generic_error">Не удалось выполнить расчёт конструкции.</string>
+    <string name="dialog_calculation_error_title">Ошибка расчёта</string>
+    <string name="processor_nodes_table_title">Результаты расчётов</string>
+    <string name="processor_table_col_node">Узел</string>
+    <string name="processor_table_col_displacement">Δ</string>
+    <string name="processor_table_col_force">F</string>
+    <string name="processor_table_col_reaction">R</string>
+    <string name="processor_support_badge">опора</string>
+
+    <string name="postprocessor_epure_all">Все</string>
+    <string name="postprocessor_epure_none">Скрыть</string>
+    <string name="postprocessor_show_panels">Показать панели</string>
+    <string name="postprocessor_hide_panels">Скрыть панели</string>
+    <string name="postprocessor_tab_rods">Стержни</string>
+    <string name="postprocessor_tab_nodes">Узлы</string>
+    <string name="postprocessor_tab_plots">Графики</string>
+    <string name="postprocessor_step_mode">Шаг x</string>
+    <string name="postprocessor_col_rod">Ст.</string>
+    <string name="postprocessor_equilibrium_residual">Невязка равновесия ΣR + ΣF + Σ(q·L) = %1$s</string>
+    <string name="postprocessor_section_title">Сечение</string>
+    <string name="postprocessor_rod_short">Ст. №%1$d</string>
+    <string name="postprocessor_strength_ok">Прочность обеспечена (n ≥ 1)</string>
+    <string name="postprocessor_strength_overload">Перегруз (n &lt; 1): ст. %1$s</string>
+    <string name="postprocessor_most_loaded">Самый нагруженный</string>
+    <string name="postprocessor_most_loaded_value">Ст. №%1$d (n=%2$s)</string>
+
+    <string name="dialog_export_report_title">Экспорт отчёта</string>
+    <string name="dialog_export_report_message">Выберите формат файла отчёта по результатам расчёта:</string>
+    <string name="dialog_export_report_html">HTML (.html)</string>
+    <string name="dialog_export_report_txt">Текст (.txt)</string>
+    <string name="dialog_export_report_cancel">Отмена</string>
 </resources>

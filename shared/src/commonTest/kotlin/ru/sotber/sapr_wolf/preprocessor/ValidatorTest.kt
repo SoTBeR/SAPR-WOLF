@@ -4,6 +4,9 @@ import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.ui.FileDialogAlert
 import ru.sotber.sapr_wolf.ui.MainViewModel
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -216,5 +219,107 @@ class ValidatorTest {
         val loadResult = viewModel.loadProjectFromJson(brokenJson)
         assertTrue(loadResult.isFailure)
         assertIs<FileDialogAlert.LoadError>(viewModel.uiState.value.fileDialogAlert)
+    }
+
+    @Test
+    fun testProjectNameLifecycleAndExtractProjectName() {
+        assertEquals("beam_01", ProjectFileDialog.extractProjectName("beam_01.json"))
+        assertEquals("beam_02", ProjectFileDialog.extractProjectName("beam_02.JSON"))
+        assertEquals("project", ProjectFileDialog.extractProjectName(".json"))
+
+        val viewModel = MainViewModel()
+        assertNull(viewModel.uiState.value.projectName)
+
+        val validJson = ProjectFileCodec.encode(Construction.defaultDemoConstruction())
+        val loadResult = viewModel.loadProjectFromJson(
+            jsonString = validJson,
+            projectName = "my_bridge",
+        )
+        assertTrue(loadResult.isSuccess)
+        assertEquals("my_bridge", viewModel.uiState.value.projectName)
+
+        // Изменение конструкции и Undo/Redo сохраняют текущее имя проекта
+        viewModel.addRodRight()
+        assertEquals("my_bridge", viewModel.uiState.value.projectName)
+        viewModel.undo()
+        assertEquals("my_bridge", viewModel.uiState.value.projectName)
+
+        // Создание нового проекта сбрасывает имя проекта в null
+        viewModel.startNewProject()
+        assertNull(viewModel.uiState.value.projectName)
+    }
+
+    @Test
+    fun testSaveDelegatesToSaveAsWhenNoFileOpenAndOverwritesWhenFileIsOpen() {
+        var saveAsCalls = 0
+        var overwriteCalls = 0
+        val firstHandle = ProjectFileHandle()
+        val secondHandle = ProjectFileHandle()
+
+        val fakeGateway = object : ProjectFileGateway {
+            override suspend fun pickJsonFileToOpen(): Result<OpenedProjectFile>? = null
+
+            override suspend fun saveJsonFileAs(
+                defaultFileName: String,
+                content: String,
+            ): Result<SavedProjectFile>? {
+                saveAsCalls++
+                val handle = if (saveAsCalls == 1) firstHandle else secondHandle
+                return Result.success(
+                    SavedProjectFile(
+                        file = handle,
+                        projectName = "saved_project_$saveAsCalls",
+                    )
+                )
+            }
+
+            override suspend fun overwriteJsonFile(
+                file: ProjectFileHandle,
+                content: String,
+            ): Result<Unit> {
+                overwriteCalls++
+                return Result.success(Unit)
+            }
+        }
+
+        val viewModel = MainViewModel(fileGateway = fakeGateway)
+
+        // 1. Файл проекта не открыт -> "Сохранить" работает как "Сохранить как"
+        runSuspend { viewModel.executeSaveProjectToFile() }
+        assertEquals(1, saveAsCalls)
+        assertEquals(0, overwriteCalls)
+        assertEquals("saved_project_1", viewModel.uiState.value.projectName)
+
+        // 2. Файл проекта открыт -> "Сохранить" перезаписывает текущий файл без диалога SaveAs
+        runSuspend { viewModel.executeSaveProjectToFile() }
+        assertEquals(1, saveAsCalls)
+        assertEquals(1, overwriteCalls)
+        assertEquals("saved_project_1", viewModel.uiState.value.projectName)
+
+        // 3. "Сохранить как" всегда открывает диалог сохранения и обновляет текущий файл/имя
+        runSuspend { viewModel.executeSaveProjectAsToFile() }
+        assertEquals(2, saveAsCalls)
+        assertEquals(1, overwriteCalls)
+        assertEquals("saved_project_2", viewModel.uiState.value.projectName)
+
+        // 4. Новый проект сбрасывает текущий файл -> "Сохранить" снова работает как "Сохранить как"
+        viewModel.startNewProject()
+        assertNull(viewModel.uiState.value.projectName)
+        runSuspend { viewModel.executeSaveProjectToFile() }
+        assertEquals(3, saveAsCalls)
+        assertEquals(1, overwriteCalls)
+        assertEquals("saved_project_3", viewModel.uiState.value.projectName)
+    }
+
+    private fun runSuspend(block: suspend () -> Unit) {
+        var failure: Throwable? = null
+        val continuation = object : Continuation<Unit> {
+            override val context = EmptyCoroutineContext
+            override fun resumeWith(result: Result<Unit>) {
+                failure = result.exceptionOrNull()
+            }
+        }
+        block.startCoroutine(continuation)
+        failure?.let { throw it }
     }
 }
