@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
+import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
@@ -86,6 +87,7 @@ fun MainAppBar(
     }
 
     var leftRowWidthPx by remember { mutableIntStateOf(0) }
+    var leftRowHeightPx by remember { mutableIntStateOf(0) }
     var rightRowWidthPx by remember { mutableIntStateOf(0) }
     var isFileMenuExpanded by remember { mutableStateOf(false) }
 
@@ -97,6 +99,107 @@ fun MainAppBar(
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
+        if (processorResult != null && leftRowWidthPx > 0) {
+            val resultsPanelWidth = with(density) { (leftRowWidthPx * 2).toDp() }
+
+            MainAppBarProcessorNodesTable(
+                hazeState = rowsHazeState,
+                construction = construction,
+                result = processorResult,
+                selectedNodeIndex = selectedNodeIndex,
+                onSelectNode = onSelectNode,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(MaterialThemeSpacing.floatingMargin)
+                    .width(resultsPanelWidth),
+            )
+        }
+
+        if (postprocessorResult != null && leftRowWidthPx > 0 && leftRowHeightPx > 0 && construction.rods.isNotEmpty()) {
+            val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
+            val leftRowHeight = with(density) { leftRowHeightPx.toDp() }
+            val resultsPanelWidth = leftPanelWidth * 2
+
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.medium),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxHeight()
+                    .padding(
+                        start = MaterialThemeSpacing.floatingMargin,
+                        top = MaterialThemeSpacing.floatingMargin + leftRowHeight + MaterialThemeSpacing.medium,
+                        end = MaterialThemeSpacing.floatingMargin,
+                        bottom = MaterialThemeSpacing.floatingMargin,
+                    ),
+            ) {
+                MainAppBarPostprocessorSectionPanel(
+                    hazeState = rowsHazeState,
+                    construction = construction,
+                    result = postprocessorResult,
+                    selectedRodIndex = selectedRodIndex,
+                    inspectedRodIndex = inspectedRodIndex,
+                    inspectedLocalX = inspectedLocalX,
+                    onInspectSection = onInspectSection,
+                    modifier = Modifier.width(leftPanelWidth),
+                )
+
+                MainAppBarPostprocessorResultsTable(
+                    hazeState = rowsHazeState,
+                    construction = construction,
+                    result = postprocessorResult,
+                    selectedRodIndex = selectedRodIndex,
+                    inspectedRodIndex = inspectedRodIndex,
+                    onInspectSection = onInspectSection,
+                    modifier = Modifier
+                        .width(resultsPanelWidth)
+                        .weight(1f),
+                )
+
+                MainAppBarPostprocessorPlotsPanel(
+                    hazeState = rowsHazeState,
+                    construction = construction,
+                    result = postprocessorResult,
+                    selectedRodIndex = selectedRodIndex,
+                    inspectedRodIndex = inspectedRodIndex,
+                    inspectedLocalX = inspectedLocalX,
+                    onInspectSection = onInspectSection,
+                    modifier = Modifier
+                        .width(resultsPanelWidth)
+                        .weight(1f),
+                )
+            }
+        }
+
+        if (!projectName.isNullOrBlank()) {
+            val maxNameWidth = if (rightRowWidthPx > 0) {
+                with(density) { rightRowWidthPx.toDp() }
+            } else {
+                240.dp
+            }
+
+            MainAppBarRow(
+                hazeState = rowsHazeState,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(MaterialThemeSpacing.floatingMargin),
+            ) {
+                Text(
+                    text = projectName,
+                    style = MaterialTheme.typography.labelMediumBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .widthIn(max = maxNameWidth)
+                        .padding(
+                            horizontal = MaterialThemeSpacing.mediumSmall,
+                            vertical = MaterialThemeSpacing.small,
+                        ),
+                )
+            }
+        }
+
         if (isFileMenuExpanded) {
             Box(
                 modifier = Modifier
@@ -136,6 +239,7 @@ fun MainAppBar(
                         hazeState = rowsHazeState,
                         modifier = Modifier.onSizeChanged { size ->
                             leftRowWidthPx = size.width
+                            leftRowHeightPx = size.height
                         },
                     ) {
                         MainAppBarButton(
@@ -155,21 +259,6 @@ fun MainAppBar(
                                 onStartProject()
                             },
                         )
-
-                        if (!projectName.isNullOrBlank()) {
-                            MainAppBarRowDivider()
-
-                            Text(
-                                text = projectName,
-                                style = MaterialTheme.typography.labelMediumBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .widthIn(max = 200.dp)
-                                    .padding(horizontal = MaterialThemeSpacing.small),
-                            )
-                        }
 
                         MainAppBarRowDivider()
 
@@ -222,40 +311,53 @@ fun MainAppBar(
                 }
             }
 
-        MainAppBarRow(
-            hazeState = rowsHazeState,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.medium),
         ) {
-            MainAppBarButton(
-                textRes = Res.string.preprocessor,
-                style = MainAppBarButtonStyle.Segment,
-                isSelected = selectedStage == AppStage.Preprocessor,
-                onClick = { onSelectStage(AppStage.Preprocessor) },
-            )
+            MainAppBarRow(
+                hazeState = rowsHazeState,
+            ) {
+                MainAppBarButton(
+                    textRes = Res.string.preprocessor,
+                    style = MainAppBarButtonStyle.Segment,
+                    isSelected = selectedStage == AppStage.Preprocessor,
+                    onClick = { onSelectStage(AppStage.Preprocessor) },
+                )
 
-            MainAppBarButton(
-                textRes = Res.string.processor,
-                style = MainAppBarButtonStyle.Segment,
-                enabled = isProcessorEnabled,
-                isSelected = selectedStage == AppStage.Processor,
-                onClick = { onSelectStage(AppStage.Processor) },
-            )
+                MainAppBarButton(
+                    textRes = Res.string.processor,
+                    style = MainAppBarButtonStyle.Segment,
+                    enabled = isProcessorEnabled,
+                    isSelected = selectedStage == AppStage.Processor,
+                    onClick = { onSelectStage(AppStage.Processor) },
+                )
 
-            MainAppBarButton(
-                textRes = Res.string.postprocessor,
-                style = MainAppBarButtonStyle.Segment,
-                enabled = isPostprocessorEnabled,
-                isSelected = selectedStage == AppStage.Postprocessor,
-                onClick = { onSelectStage(AppStage.Postprocessor) },
-            )
+                MainAppBarButton(
+                    textRes = Res.string.postprocessor,
+                    style = MainAppBarButtonStyle.Segment,
+                    enabled = isPostprocessorEnabled,
+                    isSelected = selectedStage == AppStage.Postprocessor,
+                    onClick = { onSelectStage(AppStage.Postprocessor) },
+                )
 
-            MainAppBarRowDivider()
+                MainAppBarRowDivider()
 
-            MainAppBarButton(
-                textRes = Res.string.calculate,
-                style = MainAppBarButtonStyle.Primary,
-                enabled = canCalculate,
-                onClick = onCalculate,
-            )
+                MainAppBarButton(
+                    textRes = Res.string.calculate,
+                    style = MainAppBarButtonStyle.Primary,
+                    enabled = canCalculate,
+                    onClick = onCalculate,
+                )
+            }
+
+            if (postprocessorResult != null) {
+                MainAppBarEpureSelector(
+                    hazeState = rowsHazeState,
+                    selectedMode = epureDisplayMode,
+                    onSelectMode = onSelectEpureMode,
+                )
+            }
         }
 
         Column(
@@ -274,7 +376,7 @@ fun MainAppBar(
                 )
 
                 Text(
-                    text = "${zoomLabel.roundToInt()}%",
+                    text = stringResource(Res.string.zoom_percent, zoomLabel.roundToInt()),
                     style = MonoTextStyle,
                     textAlign = TextAlign.End,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -378,66 +480,8 @@ fun MainAppBar(
                     }
                 }
             }
-
-            if (postprocessorResult != null) {
-                MainAppBarEpureSelector(
-                    hazeState = rowsHazeState,
-                    selectedMode = epureDisplayMode,
-                    onSelectMode = onSelectEpureMode,
-                )
-            }
         }
     }
-
-        if (processorResult != null && leftRowWidthPx > 0) {
-            val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
-
-            MainAppBarProcessorNodesTable(
-                hazeState = rowsHazeState,
-                construction = construction,
-                result = processorResult,
-                selectedNodeIndex = selectedNodeIndex,
-                onSelectNode = onSelectNode,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(MaterialThemeSpacing.floatingMargin)
-                    .width(leftPanelWidth),
-            )
-        }
-
-        if (postprocessorResult != null && leftRowWidthPx > 0 && construction.rods.isNotEmpty()) {
-            val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.medium),
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(MaterialThemeSpacing.floatingMargin)
-                    .width(leftPanelWidth),
-            ) {
-                MainAppBarPostprocessorSectionPanel(
-                    hazeState = rowsHazeState,
-                    construction = construction,
-                    result = postprocessorResult,
-                    selectedRodIndex = selectedRodIndex,
-                    inspectedRodIndex = inspectedRodIndex,
-                    inspectedLocalX = inspectedLocalX,
-                    onInspectSection = onInspectSection,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                MainAppBarPostprocessorResultsTable(
-                    hazeState = rowsHazeState,
-                    construction = construction,
-                    result = postprocessorResult,
-                    selectedRodIndex = selectedRodIndex,
-                    inspectedRodIndex = inspectedRodIndex,
-                    inspectedLocalX = inspectedLocalX,
-                    onInspectSection = onInspectSection,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
     }
 }
 

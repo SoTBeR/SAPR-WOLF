@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.localizedMessage
 import ru.sotber.sapr_wolf.ui.CalculationState
+import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.calculation_generic_error
 import sapr_wolf.shared.generated.resources.dialog_calculation_error_title
@@ -42,7 +43,7 @@ fun CalculationErrorDialog(
                 Text(text = stringResource(Res.string.dialog_continue))
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialThemeExtraColors.glassDialog,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     )

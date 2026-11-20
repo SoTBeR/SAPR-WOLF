@@ -60,7 +60,7 @@ private object CanvasDefaults {
     const val BASE_ROD_BADGE_STROKE_WIDTH = 1f
     const val MIN_ROD_HIT_HEIGHT = 14f
 
-    const val BASE_DIMENSION_OFFSET_Y = 24f
+    const val BASE_DIMENSION_OFFSET_Y = 28f
     const val BASE_DIMENSION_NOTCH_HALF_LEN = 4f
     const val BASE_DIMENSION_TEXT_GAP_Y = 4f
     const val BASE_DASH_ON = 4f
@@ -187,7 +187,7 @@ fun ConstructionCanvas(
             stroke = extraColors.tensionLine,
             fill = extraColors.tensionLine.copy(alpha = 0.05f),
             labelText = colorScheme.onSurface,
-            inspectionMarker = colorScheme.primary,
+            inspectionMarker = colorScheme.primary.copy(alpha = 0.45f),
         )
     }
 
@@ -426,7 +426,7 @@ fun ConstructionCanvas(
                 )
                 val rodHalfH = rodScreenHeight(rod, scale) / 2f + 10f * scale
                 drawLine(
-                    color = palette.rodSelectedBorder,
+                    color = palette.rodSelectedBorder.copy(alpha = 0.45f),
                     start = Offset(markerX, centerY - rodHalfH),
                     end = Offset(markerX, centerY + rodHalfH),
                     strokeWidth = scaledStroke(2f, scale),
@@ -812,7 +812,7 @@ private fun DrawScope.drawRodsAndDimensions(
             textLayoutResult = lengthText,
             topLeft = Offset(
                 x = centerX - lengthText.size.width / 2f,
-                y = commonDimY + CanvasDefaults.BASE_DIMENSION_TEXT_GAP_Y * scale,
+                y = commonDimY - lengthText.size.height - CanvasDefaults.BASE_DIMENSION_TEXT_GAP_Y * scale,
             ),
         )
     }
@@ -1125,7 +1125,7 @@ private fun DrawScope.drawProcessorResults(
         result.displacements.getOrNull(nodeIdx)?.let { delta ->
             drawCenteredLabel(
                 textMeasurer = textMeasurer,
-                text = "Δ${nodeIdx + 1}=${formatCalculationValue(delta)}",
+                text = "Δ${nodeIdx + 1} = ${formatCalculationValue(delta)}",
                 centerX = nodeX,
                 bottomY = displacementBottomY,
                 color = palette.forceAndLoad,
@@ -1136,7 +1136,7 @@ private fun DrawScope.drawProcessorResults(
         result.reactions[nodeIdx]?.let { reaction ->
             drawCenteredLabel(
                 textMeasurer = textMeasurer,
-                text = "R${nodeIdx + 1}=${formatCalculationValue(reaction)}",
+                text = "R${nodeIdx + 1} = ${formatCalculationValue(reaction)}",
                 centerX = nodeX,
                 bottomY = reactionBottomY,
                 color = palette.onNode,

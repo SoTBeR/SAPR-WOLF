@@ -126,7 +126,10 @@ class MainViewModel(
         _uiState.update { it.copy(isExportReportDialogOpen = false) }
     }
 
-    fun exportReport(format: ReportFormat) {
+    fun exportReport(
+        format: ReportFormat,
+        openAfterExport: Boolean = false,
+    ) {
         val current = _uiState.value
         val result = current.calculationState as? CalculationState.Success ?: return
         if (current.isFileDialogOpen) return
@@ -149,6 +152,7 @@ class MainViewModel(
                     defaultFileName = defaultFileName,
                     extension = format.extension,
                     content = reportContent,
+                    openAfterExport = openAfterExport,
                 ) ?: return@launch
 
                 saveResult.onFailure { error ->

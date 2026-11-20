@@ -9,11 +9,12 @@
     <string name="processor">Процессор</string>
     <string name="postprocessor">Постпроцессор</string>
     <string name="calculate">Рассчитать</string>
+    <string name="zoom_percent">%1$d%</string>
 
     <string name="inspector_tab_rod">Стержень</string>
     <string name="inspector_tab_node">Узел</string>
-    <string name="inspector_rod_title">Стержень №%1$d</string>
-    <string name="inspector_node_title">Узел №%1$d</string>
+    <string name="inspector_rod_title">Стержень %1$d</string>
+    <string name="inspector_node_title">Узел %1$d</string>
     <string name="inspector_field_length">Длина L</string>
     <string name="inspector_field_area">Сечение A</string>
     <string name="inspector_field_modulus">Модуль E</string>
@@ -51,6 +52,7 @@
     <string name="norm_replaced_rod_allowable_stress">Некорректное допускаемое напряжение стержня %1$d заменено на %2$s</string>
     <string name="norm_replaced_rod_distributed_load">Некорректная распределённая нагрузка стержня %1$d заменена на %2$s</string>
 
+    <string name="validation_issues_title">Проблемы конструкции</string>
     <string name="validation_e01_no_rods">Нет ни одного стержня. Добавьте хотя бы один стержень.</string>
     <string name="validation_e02_invalid_length">Длина стержня %1$d должна быть положительной (L &gt; 0).</string>
     <string name="validation_e03_invalid_area">Площадь поперечного сечения стержня %1$d должна быть положительной (A &gt; 0).</string>
@@ -74,17 +76,30 @@
 
     <string name="postprocessor_epure_all">Все</string>
     <string name="postprocessor_epure_none">Скрыть</string>
-    <string name="postprocessor_tab_table">Таблица</string>
+    <string name="postprocessor_tab_table">Таблица значений</string>
     <string name="postprocessor_tab_plots">Графики</string>
     <string name="postprocessor_col_rod">Стержень</string>
+    <string name="postprocessor_col_x">x</string>
+    <string name="postprocessor_col_axial_force">Nx</string>
+    <string name="postprocessor_col_normal_stress">σx</string>
+    <string name="postprocessor_col_displacement">Ux</string>
+    <string name="postprocessor_col_max_stress">σmax</string>
+    <string name="postprocessor_col_safety_factor">n</string>
+    <string name="postprocessor_plot_title">%1$s(x)</string>
     <string name="postprocessor_section_title">Сечение</string>
+    <string name="postprocessor_section_range">x ∈ [0, %1$s]</string>
     <string name="postprocessor_strength_ok">Прочность обеспечена</string>
-    <string name="postprocessor_strength_overload">Перегруз (n &lt; 1): стержень %1$s</string>
+    <string name="postprocessor_strength_overload">Перегрузка на стержнях %1$s</string>
     <string name="postprocessor_most_loaded">Самый нагруженный стержень</string>
+    <string name="postprocessor_safety_factor_badge">n = %1$s</string>
+    <string name="postprocessor_peak_axial_force">max |Nx|</string>
+    <string name="postprocessor_peak_normal_stress">max |σx|</string>
+    <string name="postprocessor_peak_displacement">max |Ux|</string>
 
     <string name="dialog_export_report_title">Экспорт отчёта</string>
     <string name="dialog_export_report_message">Выберите формат файла отчёта по результатам расчёта:</string>
     <string name="dialog_export_report_html">HTML (.html)</string>
     <string name="dialog_export_report_txt">Текст (.txt)</string>
+    <string name="dialog_export_report_open_after_export">Открыть отчёт после экспорта</string>
     <string name="dialog_export_report_cancel">Отмена</string>
 </resources>

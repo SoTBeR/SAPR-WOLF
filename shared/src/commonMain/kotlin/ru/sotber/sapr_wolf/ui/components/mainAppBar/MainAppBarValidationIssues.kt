@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
+import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.ValidationIssue
 import ru.sotber.sapr_wolf.model.localizedMessage
 import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
@@ -30,6 +31,8 @@ import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
 import ru.sotber.sapr_wolf.ui.theme.Shapes
 import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
+import sapr_wolf.shared.generated.resources.Res
+import sapr_wolf.shared.generated.resources.validation_issues_title
 
 @Composable
 fun MainAppBarValidationIssues(
@@ -58,7 +61,7 @@ fun MainAppBarValidationIssues(
                 .padding(horizontal = MaterialThemeSpacing.extraSmall),
         ) {
             Text(
-                text = "Проблемы конструкции",
+                text = stringResource(Res.string.validation_issues_title),
                 style = MaterialTheme.typography.labelMediumBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,

@@ -96,7 +96,7 @@ fun MainScreenContent(
     onInspectSection: (Int, Double) -> Unit = { _, _ -> },
     onToggleTheme: () -> Unit = {},
     onExportReport: () -> Unit = {},
-    onConfirmExportReport: (ReportFormat) -> Unit = {},
+    onConfirmExportReport: (ReportFormat, Boolean) -> Unit = { _, _ -> },
     onDismissExportReportDialog: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
 ) {
@@ -230,6 +230,15 @@ fun MainScreenContent(
                     uiState.selectedRodIndex?.let {
                         onDeleteRod(it)
                     }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Enter && keyEvent.isCtrlPressed) {
+                    onCalculate()
 
                     true
                 } else {
@@ -398,8 +407,8 @@ fun MainScreenContent(
 
         if (uiState.isExportReportDialogOpen) {
             ExportReportDialog(
-                onSelectFormat = { format ->
-                    onConfirmExportReport(format)
+                onSelectFormat = { format, openAfterExport ->
+                    onConfirmExportReport(format, openAfterExport)
                     focusRequester.requestFocus()
                 },
                 onDismiss = {

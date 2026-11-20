@@ -22,12 +22,15 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.postprocessor.calculateSection
 import ru.sotber.sapr_wolf.ui.formatCalculationValue
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
 import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
+import sapr_wolf.shared.generated.resources.Res
+import sapr_wolf.shared.generated.resources.postprocessor_plot_title
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -105,7 +108,7 @@ fun PlotCanvas(
                 .padding(bottom = 2.dp),
         ) {
             Text(
-                text = "${component.symbol}(x)",
+                text = stringResource(Res.string.postprocessor_plot_title, component.symbol),
                 style = MaterialTheme.typography.labelMediumBold,
                 color = colorScheme.onSurface,
                 modifier = Modifier.weight(1f),

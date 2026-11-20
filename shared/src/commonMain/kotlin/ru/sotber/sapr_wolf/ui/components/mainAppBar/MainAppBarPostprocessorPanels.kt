@@ -9,43 +9,29 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,10 +45,10 @@ import ru.sotber.sapr_wolf.postprocessor.summarizePostprocessor
 import ru.sotber.sapr_wolf.ui.CalculationState
 import ru.sotber.sapr_wolf.ui.components.EpureComponent
 import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.NumericTextField
 import ru.sotber.sapr_wolf.ui.components.PlotCanvas
 import ru.sotber.sapr_wolf.ui.formatTableValue
 import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
-import ru.sotber.sapr_wolf.ui.theme.FieldShape
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.MonoTextStyle
@@ -71,13 +57,7 @@ import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
 import sapr_wolf.shared.generated.resources.*
 import kotlin.math.abs
 
-private enum class PostprocessorViewTab {
-    Table,
-    Plots,
-}
-
 private object PostprocessorPanelDefaults {
-    val maxTableHeight = 190.dp
     val minTableContentWidth = 540.dp
     val plotChartHeight = 104.dp
     const val rodColWeight = 1.05f
@@ -152,7 +132,6 @@ fun MainAppBarPostprocessorResultsTable(
     result: CalculationState.Success,
     selectedRodIndex: Int?,
     inspectedRodIndex: Int?,
-    inspectedLocalX: Double,
     onInspectSection: (Int, Double) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -164,13 +143,6 @@ fun MainAppBarPostprocessorResultsTable(
     val activeRodIndex = (inspectedRodIndex ?: selectedRodIndex ?: 0)
         .coerceIn(0, construction.rods.lastIndex)
 
-    var activeTab by remember { mutableStateOf(PostprocessorViewTab.Table) }
-
-    val compactPadding = PaddingValues(
-        horizontal = MaterialThemeSpacing.small,
-        vertical = MaterialThemeSpacing.extraSmall,
-    )
-
     MainAppBarColumn(
         hazeState = hazeState,
         modifier = modifier,
@@ -178,33 +150,18 @@ fun MainAppBarPostprocessorResultsTable(
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = MaterialThemeSpacing.extraSmall),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.extraSmall),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = CapsuleShape,
-                    )
-                    .padding(2.dp),
-            ) {
-                MainAppBarButton(
-                    textRes = Res.string.postprocessor_tab_table,
-                    style = MainAppBarButtonStyle.Segment,
-                    isSelected = activeTab == PostprocessorViewTab.Table,
-                    contentPadding = compactPadding,
-                    onClick = { activeTab = PostprocessorViewTab.Table },
-                )
-                MainAppBarButton(
-                    textRes = Res.string.postprocessor_tab_plots,
-                    style = MainAppBarButtonStyle.Segment,
-                    isSelected = activeTab == PostprocessorViewTab.Plots,
-                    contentPadding = compactPadding,
-                    onClick = { activeTab = PostprocessorViewTab.Plots },
-                )
-            }
+            Text(
+                text = stringResource(Res.string.postprocessor_tab_table),
+                style = MaterialTheme.typography.labelMediumBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
 
             Box(
                 contentAlignment = Alignment.Center,
@@ -231,27 +188,90 @@ fun MainAppBarPostprocessorResultsTable(
             color = MaterialTheme.colorScheme.outline,
         )
 
-        when (activeTab) {
-            PostprocessorViewTab.Table -> {
-                PostprocessorRodsTable(
-                    construction = construction,
-                    displacementsArray = displacementsArray,
-                    rodStrengths = result.rodStrengths,
-                    activeRodIndex = activeRodIndex,
-                    onInspectSection = onInspectSection,
-                )
-            }
+        PostprocessorRodsTable(
+            construction = construction,
+            displacementsArray = displacementsArray,
+            rodStrengths = result.rodStrengths,
+            activeRodIndex = activeRodIndex,
+            onInspectSection = onInspectSection,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
 
-            PostprocessorViewTab.Plots -> {
-                PostprocessorPlotsContent(
-                    construction = construction,
-                    displacementsArray = displacementsArray,
-                    activeRodIndex = activeRodIndex,
-                    inspectedLocalX = inspectedLocalX,
-                    onSelectRod = { rodIdx -> onInspectSection(rodIdx, 0.0) },
+@Composable
+fun MainAppBarPostprocessorPlotsPanel(
+    hazeState: HazeState?,
+    construction: Construction,
+    result: CalculationState.Success,
+    selectedRodIndex: Int?,
+    inspectedRodIndex: Int?,
+    inspectedLocalX: Double,
+    onInspectSection: (Int, Double) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (construction.rods.isEmpty()) return
+
+    val displacementsArray = remember(result.displacements) {
+        result.displacements.toDoubleArray()
+    }
+    val activeRodIndex = (inspectedRodIndex ?: selectedRodIndex ?: 0)
+        .coerceIn(0, construction.rods.lastIndex)
+
+    MainAppBarColumn(
+        hazeState = hazeState,
+        modifier = modifier,
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = MaterialThemeSpacing.extraSmall),
+        ) {
+            Text(
+                text = stringResource(Res.string.postprocessor_tab_plots),
+                style = MaterialTheme.typography.labelMediumBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MainAppBarIconButton(
+                    iconRes = Res.drawable.ic_back,
+                    enabled = activeRodIndex > 0,
+                    onClick = { onInspectSection(activeRodIndex - 1, 0.0) },
+                )
+                Text(
+                    text = stringResource(Res.string.inspector_rod_title, activeRodIndex + 1),
+                    style = MonoTextStyle.copy(color = MaterialTheme.colorScheme.onSurface),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                MainAppBarIconButton(
+                    iconRes = Res.drawable.ic_forward,
+                    enabled = activeRodIndex < construction.rods.lastIndex,
+                    onClick = { onInspectSection(activeRodIndex + 1, 0.0) },
                 )
             }
         }
+
+        HorizontalDivider(
+            thickness = DividerDefaults.Thickness,
+            color = MaterialTheme.colorScheme.outline,
+        )
+
+        PostprocessorPlotsContent(
+            construction = construction,
+            displacementsArray = displacementsArray,
+            activeRodIndex = activeRodIndex,
+            inspectedLocalX = inspectedLocalX,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -306,15 +326,22 @@ private fun PostprocessorRodsTable(
         color = colorScheme.onSurface,
     )
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+    BoxWithConstraints(
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.extraSmall),
-            modifier = Modifier.width(PostprocessorPanelDefaults.minTableContentWidth),
+        val tableWidth = maxOf(maxWidth, PostprocessorPanelDefaults.minTableContentWidth)
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .horizontalScroll(rememberScrollState()),
         ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.extraSmall),
+                modifier = Modifier
+                    .width(tableWidth)
+                    .fillMaxHeight(),
+            ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.extraSmall),
                 verticalAlignment = Alignment.CenterVertically,
@@ -331,37 +358,37 @@ private fun PostprocessorRodsTable(
                     modifier = Modifier.weight(PostprocessorPanelDefaults.rodColWeight),
                 )
                 Text(
-                    text = "x",
+                    text = stringResource(Res.string.postprocessor_col_x),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.xColWeight),
                 )
                 Text(
-                    text = "Nx",
+                    text = stringResource(Res.string.postprocessor_col_axial_force),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.valueColWeight),
                 )
                 Text(
-                    text = "σx",
+                    text = stringResource(Res.string.postprocessor_col_normal_stress),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.valueColWeight),
                 )
                 Text(
-                    text = "Ux",
+                    text = stringResource(Res.string.postprocessor_col_displacement),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.valueColWeight),
                 )
                 Text(
-                    text = "σmax",
+                    text = stringResource(Res.string.postprocessor_col_max_stress),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.stressMaxColWeight),
                 )
                 Text(
-                    text = "n",
+                    text = stringResource(Res.string.postprocessor_col_safety_factor),
                     style = headerStyle,
                     textAlign = TextAlign.End,
                     modifier = Modifier.weight(PostprocessorPanelDefaults.safetyColWeight),
@@ -372,7 +399,7 @@ private fun PostprocessorRodsTable(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = PostprocessorPanelDefaults.maxTableHeight)
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
             ) {
                 construction.rods.forEachIndexed { rodIndex, rod ->
@@ -534,6 +561,7 @@ private fun PostprocessorRodsTable(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -542,70 +570,41 @@ private fun PostprocessorPlotsContent(
     displacementsArray: DoubleArray,
     activeRodIndex: Int,
     inspectedLocalX: Double,
-    onSelectRod: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
-        verticalArrangement = Arrangement.SpaceBetween,
-        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.small),
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState()),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+        PlotCanvas(
+            construction = construction,
+            displacements = displacementsArray,
+            rodIndex = activeRodIndex,
+            component = EpureComponent.AxialForce,
+            inspectedLocalX = inspectedLocalX,
+            chartHeight = PostprocessorPanelDefaults.plotChartHeight,
             modifier = Modifier.fillMaxWidth(),
-        ) {
-            MainAppBarIconButton(
-                iconRes = Res.drawable.ic_back,
-                enabled = activeRodIndex > 0,
-                onClick = { onSelectRod(activeRodIndex - 1) },
-            )
-            Text(
-                text = stringResource(Res.string.inspector_rod_title, activeRodIndex + 1),
-                style = MaterialTheme.typography.labelMediumBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            MainAppBarIconButton(
-                iconRes = Res.drawable.ic_forward,
-                enabled = activeRodIndex < construction.rods.lastIndex,
-                onClick = { onSelectRod(activeRodIndex + 1) },
-            )
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.small),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = PostprocessorPanelDefaults.maxTableHeight)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            PlotCanvas(
-                construction = construction,
-                displacements = displacementsArray,
-                rodIndex = activeRodIndex,
-                component = EpureComponent.AxialForce,
-                inspectedLocalX = inspectedLocalX,
-                chartHeight = PostprocessorPanelDefaults.plotChartHeight,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PlotCanvas(
-                construction = construction,
-                displacements = displacementsArray,
-                rodIndex = activeRodIndex,
-                component = EpureComponent.NormalStress,
-                inspectedLocalX = inspectedLocalX,
-                chartHeight = PostprocessorPanelDefaults.plotChartHeight,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PlotCanvas(
-                construction = construction,
-                displacements = displacementsArray,
-                rodIndex = activeRodIndex,
-                component = EpureComponent.Displacement,
-                inspectedLocalX = inspectedLocalX,
-                chartHeight = PostprocessorPanelDefaults.plotChartHeight,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
+        )
+        PlotCanvas(
+            construction = construction,
+            displacements = displacementsArray,
+            rodIndex = activeRodIndex,
+            component = EpureComponent.NormalStress,
+            inspectedLocalX = inspectedLocalX,
+            chartHeight = PostprocessorPanelDefaults.plotChartHeight,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        PlotCanvas(
+            construction = construction,
+            displacements = displacementsArray,
+            rodIndex = activeRodIndex,
+            component = EpureComponent.Displacement,
+            inspectedLocalX = inspectedLocalX,
+            chartHeight = PostprocessorPanelDefaults.plotChartHeight,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -627,16 +626,6 @@ private fun PostprocessorSectionAndStrengthPanel(
         calculateSection(construction, displacementsArray, activeRodIndex, clampedX)
     }
     val rodStrength = result.rodStrengths.getOrNull(activeRodIndex)
-
-    var xText by remember(activeRodIndex, clampedX) {
-        mutableStateOf(formatTableValue(clampedX))
-    }
-    LaunchedEffect(activeRodIndex, clampedX) {
-        val parsed = xText.replace(',', '.').toDoubleOrNull()
-        if (parsed == null || abs(parsed - clampedX) > 1e-6) {
-            xText = formatTableValue(clampedX)
-        }
-    }
 
     MainAppBarColumn(
         hazeState = hazeState,
@@ -682,18 +671,24 @@ private fun PostprocessorSectionAndStrengthPanel(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = "x ∈ [0, ${formatTableValue(rod.length)}]",
+                text = stringResource(Res.string.postprocessor_section_range, formatTableValue(rod.length)),
                 style = MonoTextStyle.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 modifier = Modifier.weight(1f),
             )
-            CompactNumericField(
-                value = xText,
-                onValueChange = { next ->
-                    xText = next
-                    next.replace(',', '.').toDoubleOrNull()?.let { parsed ->
-                        onInspectSection(activeRodIndex, parsed.coerceIn(0.0, rod.length))
-                    }
+            NumericTextField(
+                value = clampedX,
+                onValueChange = { nextX ->
+                    onInspectSection(activeRodIndex, nextX)
                 },
+                elementKey = activeRodIndex,
+                allowNegative = false,
+                allowZero = true,
+                allowScientificNotation = true,
+                minValue = 0.0,
+                maxValue = rod.length,
+                clampToRangeOnCommit = true,
+                formatValue = { formatTableValue(it) },
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
                 modifier = Modifier.width(88.dp),
             )
         }
@@ -702,14 +697,22 @@ private fun PostprocessorSectionAndStrengthPanel(
             horizontalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.small),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            MetricChip(label = "Nx", value = formatTableValue(section.axialForce), modifier = Modifier.weight(1f))
             MetricChip(
-                label = "σx",
+                label = stringResource(Res.string.postprocessor_col_axial_force),
+                value = formatTableValue(section.axialForce),
+                modifier = Modifier.weight(1f),
+            )
+            MetricChip(
+                label = stringResource(Res.string.postprocessor_col_normal_stress),
                 value = formatTableValue(section.normalStress),
                 isError = rodStrength != null && abs(section.normalStress) > rodStrength.allowableStress + 1e-9,
                 modifier = Modifier.weight(1f),
             )
-            MetricChip(label = "Ux", value = formatTableValue(section.displacement), modifier = Modifier.weight(1f))
+            MetricChip(
+                label = stringResource(Res.string.postprocessor_col_displacement),
+                value = formatTableValue(section.displacement),
+                modifier = Modifier.weight(1f),
+            )
         }
 
         HorizontalDivider(
@@ -759,17 +762,17 @@ private fun PostprocessorSectionAndStrengthPanel(
             modifier = Modifier.fillMaxWidth(),
         ) {
             PeakMetricCard(
-                label = "max |Nx|",
+                label = stringResource(Res.string.postprocessor_peak_axial_force),
                 value = formatTableValue(summary.maxAbsAxialForce),
                 modifier = Modifier.weight(1f),
             )
             PeakMetricCard(
-                label = "max |σx|",
+                label = stringResource(Res.string.postprocessor_peak_normal_stress),
                 value = formatTableValue(summary.maxAbsNormalStress),
                 modifier = Modifier.weight(1f),
             )
             PeakMetricCard(
-                label = "max |Ux|",
+                label = stringResource(Res.string.postprocessor_peak_displacement),
                 value = formatTableValue(summary.maxAbsDisplacement),
                 modifier = Modifier.weight(1f),
             )
@@ -831,7 +834,10 @@ private fun MostLoadedRodCard(
                         .padding(horizontal = MaterialThemeSpacing.small, vertical = 2.dp),
                 ) {
                     Text(
-                        text = "n=${formatTableValue(minSafetyFactor)}",
+                        text = stringResource(
+                            Res.string.postprocessor_safety_factor_badge,
+                            formatTableValue(minSafetyFactor),
+                        ),
                         style = MonoTextStyle.copy(color = accentColor),
                         maxLines = 1,
                     )
@@ -907,50 +913,4 @@ private fun MetricChip(
             overflow = TextOverflow.Ellipsis,
         )
     }
-}
-
-@Composable
-private fun CompactNumericField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val focusManager = LocalFocusManager.current
-    var isFocused by remember { mutableStateOf(false) }
-
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = MonoTextStyle.copy(
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.End,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Decimal,
-            imeAction = ImeAction.Done,
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = { focusManager.clearFocus() },
-        ),
-        modifier = modifier
-            .clip(FieldShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(
-                width = 1.dp,
-                color = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                shape = FieldShape,
-            )
-            .onFocusChanged { isFocused = it.isFocused }
-            .onPreviewKeyEvent { keyEvent ->
-                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Escape) {
-                    focusManager.clearFocus()
-                    true
-                } else {
-                    false
-                }
-            }
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-    )
 }

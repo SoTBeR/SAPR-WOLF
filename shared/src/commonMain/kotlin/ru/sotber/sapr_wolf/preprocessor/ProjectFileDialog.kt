@@ -5,6 +5,7 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.dialogs.openFileSaver
+import io.github.vinceglb.filekit.dialogs.openFileWithDefaultApplication
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readString
 import io.github.vinceglb.filekit.writeString
@@ -41,6 +42,7 @@ interface ProjectFileGateway {
         defaultFileName: String,
         extension: String,
         content: String,
+        openAfterExport: Boolean = false,
     ): Result<String>? = null
 }
 
@@ -106,6 +108,7 @@ object ProjectFileDialog : ProjectFileGateway {
         defaultFileName: String,
         extension: String,
         content: String,
+        openAfterExport: Boolean,
     ): Result<String>? {
         val suggestedBaseName = extractProjectName(defaultFileName) + "_report"
 
@@ -121,6 +124,11 @@ object ProjectFileDialog : ProjectFileGateway {
 
         return runCatching {
             targetFile.writeString(content)
+            if (openAfterExport) {
+                runCatching {
+                    FileKit.openFileWithDefaultApplication(targetFile)
+                }
+            }
             targetFile.name
         }
     }

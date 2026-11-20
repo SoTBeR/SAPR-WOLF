@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.preprocessor.localizedMessage
 import ru.sotber.sapr_wolf.ui.FileDialogAlert
+import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import sapr_wolf.shared.generated.resources.*
 
@@ -87,7 +88,7 @@ fun ProjectFileAlertDialog(
                 Text(text = stringResource(Res.string.dialog_continue))
             }
         },
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialThemeExtraColors.glassDialog,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     )

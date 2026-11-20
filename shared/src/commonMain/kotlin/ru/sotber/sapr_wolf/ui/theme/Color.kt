@@ -57,10 +57,10 @@ val CompressionLineLight = Color(0xFF6E6E73)
 val SupportHatchDark = Color(0xFF8E8E93)
 val SupportHatchLight = Color(0xFF6E6E73)
 
-val GlassDialogDark = Color(36, 36, 41, 199)
+val GlassDialogDark = Color(36, 36, 41, 240)
 val GlassChipDark = Color(44, 44, 50, 140)
 val GlassSpecularDark = Color(1f, 1f, 1f, 0.07f)
 
-val GlassDialogLight = Color(255, 255, 255, 219)
+val GlassDialogLight = Color(255, 255, 255, 245)
 val GlassChipLight = Color(255, 255, 255, 153)
 val GlassSpecularLight = Color(1f, 1f, 1f, 0.90f)

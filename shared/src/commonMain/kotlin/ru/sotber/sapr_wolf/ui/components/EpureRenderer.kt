@@ -46,12 +46,13 @@ fun EpureDisplayMode.toComponents(): List<EpureComponent> = when (this) {
 }
 
 private object EpureDefaults {
-    const val BASE_TOP_OFFSET_BELOW_DIM = 74f
+    const val BASE_TOP_OFFSET_BELOW_DIM = 78f
     const val BASE_HALF_HEIGHT = 48f
     const val BASE_BAND_SPACING = 132f
     const val BASE_HATCH_STEP = 5f
     const val BASE_LABEL_INSET_X = 6f
-    const val BASE_LABEL_GAP_Y = 3f
+    const val BASE_LABEL_GAP_Y = 4f
+    const val BASE_LABEL_CURVE_CLEARANCE_X = 2f
     const val BASE_AXIS_STROKE = 1.4f
     const val BASE_CONTOUR_STROKE = 1.8f
     const val BASE_HATCH_STROKE = 1.15f
@@ -97,7 +98,7 @@ internal fun DrawScope.drawEpures(
 
     val guideDash = PathEffect.dashPathEffect(floatArrayOf(4f * scale, 4f * scale), 0f)
     val guideStroke = (EpureDefaults.BASE_GUIDE_STROKE * scale).coerceAtLeast(0.6f)
-    val guideTopY = commonDimY + 18f * scale
+    val guideTopY = commonDimY + 10f * scale
     val guideBottomY = lastAxisY + halfHeight + 16f * scale
 
     for (nodeIndex in 0 until construction.nodeCount) {
@@ -300,6 +301,7 @@ private fun DrawScope.drawSingleComponentEpure(
                 anchorY = startY,
                 axisY = axisY,
                 alignMode = LabelAlignMode.Center,
+                screenPoints = screenPoints,
                 scale = scale,
                 palette = palette,
                 textMeasurer = textMeasurer,
@@ -312,6 +314,7 @@ private fun DrawScope.drawSingleComponentEpure(
                 anchorY = startY,
                 axisY = axisY,
                 alignMode = LabelAlignMode.Left,
+                screenPoints = screenPoints,
                 scale = scale,
                 palette = palette,
                 textMeasurer = textMeasurer,
@@ -323,6 +326,7 @@ private fun DrawScope.drawSingleComponentEpure(
                 anchorY = endY,
                 axisY = axisY,
                 alignMode = LabelAlignMode.Right,
+                screenPoints = screenPoints,
                 scale = scale,
                 palette = palette,
                 textMeasurer = textMeasurer,
@@ -340,6 +344,7 @@ private fun DrawScope.drawEpureValueLabel(
     anchorY: Float,
     axisY: Float,
     alignMode: LabelAlignMode,
+    screenPoints: List<Triple<Float, Float, Double>>,
     scale: Float,
     palette: EpurePalette,
     textMeasurer: TextMeasurer,
@@ -355,17 +360,69 @@ private fun DrawScope.drawEpureValueLabel(
         LabelAlignMode.Center -> anchorX - layout.size.width / 2f
         LabelAlignMode.Right -> anchorX - layout.size.width
     }
+    val clearanceX = EpureDefaults.BASE_LABEL_CURVE_CLEARANCE_X * scale
+    val (minCurveY, maxCurveY) = curveYBoundsInRange(
+        screenPoints = screenPoints,
+        spanLeft = textX - clearanceX,
+        spanRight = textX + layout.size.width + clearanceX,
+        fallbackY = anchorY,
+    )
     val gapY = EpureDefaults.BASE_LABEL_GAP_Y * scale
     val textY = if (anchorY <= axisY) {
-        anchorY - layout.size.height - gapY
+        minOf(anchorY, minCurveY) - layout.size.height - gapY
     } else {
-        anchorY + gapY
+        maxOf(anchorY, maxCurveY) + gapY
     }
 
     drawText(
         textLayoutResult = layout,
         topLeft = Offset(textX, textY),
     )
+}
+
+private fun curveYBoundsInRange(
+    screenPoints: List<Triple<Float, Float, Double>>,
+    spanLeft: Float,
+    spanRight: Float,
+    fallbackY: Float,
+): Pair<Float, Float> {
+    var minY = fallbackY
+    var maxY = fallbackY
+
+    for (i in 0 until screenPoints.lastIndex) {
+        val (x0, y0, _) = screenPoints[i]
+        val (x1, y1, _) = screenPoints[i + 1]
+        val segMinX = minOf(x0, x1)
+        val segMaxX = maxOf(x0, x1)
+        if (segMaxX < spanLeft || segMinX > spanRight) continue
+
+        if (x0 in spanLeft..spanRight) {
+            minY = minOf(minY, y0)
+            maxY = maxOf(maxY, y0)
+        }
+        if (x1 in spanLeft..spanRight) {
+            minY = minOf(minY, y1)
+            maxY = maxOf(maxY, y1)
+        }
+
+        val dx = x1 - x0
+        if (abs(dx) > 1e-4f) {
+            if (spanLeft in segMinX..segMaxX) {
+                val t = ((spanLeft - x0) / dx).coerceIn(0f, 1f)
+                val y = y0 + t * (y1 - y0)
+                minY = minOf(minY, y)
+                maxY = maxOf(maxY, y)
+            }
+            if (spanRight in segMinX..segMaxX) {
+                val t = ((spanRight - x0) / dx).coerceIn(0f, 1f)
+                val y = y0 + t * (y1 - y0)
+                minY = minOf(minY, y)
+                maxY = maxOf(maxY, y)
+            }
+        }
+    }
+
+    return minY to maxY
 }
 
 internal fun EpureComponent.extractValue(section: SectionResult): Double = when (this) {
