@@ -49,6 +49,7 @@ fun MainAppBarButton(
     style: MainAppBarButtonStyle = MainAppBarButtonStyle.Ghost,
     shape: Shape = CapsuleShape,
     textStyle: TextStyle? = null,
+    contentAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = MaterialThemeSpacing.mediumSmall,
         vertical = MaterialThemeSpacing.small,
@@ -64,6 +65,7 @@ fun MainAppBarButton(
         style = style,
         shape = shape,
         textStyle = textStyle,
+        contentAlignment = contentAlignment,
         contentPadding = contentPadding,
     )
 }
@@ -79,6 +81,7 @@ fun MainAppBarButton(
     style: MainAppBarButtonStyle = MainAppBarButtonStyle.Ghost,
     shape: Shape = CapsuleShape,
     textStyle: TextStyle? = null,
+    contentAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = MaterialThemeSpacing.mediumSmall,
         vertical = MaterialThemeSpacing.small,
@@ -122,7 +125,7 @@ fun MainAppBarButton(
         Row(
             horizontalArrangement = Arrangement.spacedBy(
                 space = MaterialThemeSpacing.small,
-                alignment = Alignment.CenterHorizontally,
+                alignment = contentAlignment,
             ),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(contentPadding),

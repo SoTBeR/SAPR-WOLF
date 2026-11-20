@@ -32,8 +32,9 @@ import androidx.compose.ui.unit.sp
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.model.nodeCount
-import ru.sotber.sapr_wolf.model.nodePositionOnAxis
+import ru.sotber.sapr_wolf.ui.CalculationState
 import ru.sotber.sapr_wolf.ui.ViewportState
+import ru.sotber.sapr_wolf.ui.formatCalculationValue
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
 import kotlin.math.abs
@@ -50,9 +51,8 @@ private object CanvasDefaults {
     const val BASE_ROD_HEIGHT_PER_AREA = 32.0
     const val MIN_BASE_ROD_HEIGHT = 25f
     const val MAX_BASE_ROD_HEIGHT = 500f
+    const val MAX_BASE_ROD_LENGTH = MAX_BASE_ROD_HEIGHT * 1.5f
 
-//    const val MIN_BASE_ROD_LENGTH = 15f
-//    const val MAX_BASE_ROD_LENGTH = 850f
     const val BASE_ROD_CORNER_RADIUS = 0f
     const val BASE_ROD_STROKE_WIDTH = 1.4f
     const val BASE_ROD_SELECTED_STROKE_WIDTH = 2.2f
@@ -96,6 +96,8 @@ private object CanvasDefaults {
     const val BASE_Q_TEXT_GAP_Y = 4f
     const val MAX_Q_ARROWS_PER_ROW = 24
 
+    const val BASE_RESULT_ROW_GAP = 12f
+
     const val BASE_ADD_BUTTON_OFFSET = 44f
     const val BASE_ADD_BUTTON_RADIUS = 18f
     const val BASE_ADD_BUTTON_PLUS_HALF_LEN = 7f
@@ -112,6 +114,8 @@ private data class CanvasPalette(
     val rodSelectedFill: Color,
     val rodBorder: Color,
     val rodSelectedBorder: Color,
+    val rodOverloadFill: Color,
+    val rodOverloadBorder: Color,
     val nodeFill: Color,
     val nodeSelectedFill: Color,
     val nodeBorder: Color,
@@ -139,6 +143,12 @@ fun ConstructionCanvas(
     onAddRodLeft: () -> Unit,
     onAddRodRight: () -> Unit,
     modifier: Modifier = Modifier,
+    processorResult: CalculationState.Success? = null,
+    postprocessorResult: CalculationState.Success? = null,
+    epureDisplayMode: EpureDisplayMode = EpureDisplayMode.All,
+    inspectedRodIndex: Int? = null,
+    inspectedLocalX: Double? = null,
+    onInspectSection: ((Int, Double) -> Unit)? = null,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val colorScheme = MaterialTheme.colorScheme
@@ -153,6 +163,8 @@ fun ConstructionCanvas(
             rodSelectedFill = colorScheme.primaryContainer,
             rodBorder = colorScheme.outlineVariant,
             rodSelectedBorder = colorScheme.primary,
+            rodOverloadFill = colorScheme.error.copy(alpha = 0.22f),
+            rodOverloadBorder = colorScheme.error,
             nodeFill = extraColors.glassChip,
             nodeSelectedFill = colorScheme.primary,
             nodeBorder = colorScheme.outlineVariant,
@@ -168,8 +180,27 @@ fun ConstructionCanvas(
         )
     }
 
+    val epurePalette = remember(colorScheme, extraColors) {
+        EpurePalette(
+            axis = colorScheme.onSurface,
+            guide = colorScheme.outlineVariant.copy(alpha = 0.55f),
+            stroke = extraColors.tensionLine,
+            fill = extraColors.tensionLine.copy(alpha = 0.05f),
+            labelText = colorScheme.onSurface,
+            inspectionMarker = colorScheme.primary,
+        )
+    }
+
     val totalLength = remember(construction.rods) {
-        construction.rods.sumOf { it.length }
+        construction.displayTotalLength()
+    }
+
+    val overloadedRodIndices = remember(postprocessorResult) {
+        postprocessorResult?.rodStrengths
+            ?.filter { !it.isSatisfied }
+            ?.map { it.rodIndex }
+            ?.toSet()
+            ?: emptySet()
     }
 
     val currentConstruction by rememberUpdatedState(construction)
@@ -179,6 +210,10 @@ fun ConstructionCanvas(
     val currentOnClearSelection by rememberUpdatedState(onClearSelection)
     val currentOnAddRodLeft by rememberUpdatedState(onAddRodLeft)
     val currentOnAddRodRight by rememberUpdatedState(onAddRodRight)
+    val currentOnInspectSection by rememberUpdatedState(onInspectSection)
+    val isResultMode = processorResult != null || postprocessorResult != null
+    val showLoads = !isResultMode
+    val currentShowAddButtons by rememberUpdatedState(showLoads)
 
     Canvas(
         modifier = modifier
@@ -228,6 +263,8 @@ fun ConstructionCanvas(
                         onClearSelection = currentOnClearSelection,
                         onAddRodLeft = currentOnAddRodLeft,
                         onAddRodRight = currentOnAddRodRight,
+                        addButtonsEnabled = currentShowAddButtons,
+                        onInspectSection = currentOnInspectSection,
                     )
                 }
             }
@@ -285,6 +322,8 @@ fun ConstructionCanvas(
             construction = construction,
             viewportState = viewportState,
             selectedRodIndex = selectedRodIndex,
+            overloadedRodIndices = overloadedRodIndices,
+            postprocessorResult = postprocessorResult,
             canvasWidth = canvasWidth,
             totalLength = totalLength,
             centerY = centerY,
@@ -293,6 +332,7 @@ fun ConstructionCanvas(
             palette = palette,
             textMeasurer = textMeasurer,
             textStyle = scaledMonoStyle,
+            showLoads = showLoads,
         )
 
         drawDimensionExtensionLines(
@@ -309,7 +349,7 @@ fun ConstructionCanvas(
         for (fixedNodeIdx in construction.fixedNodes) {
             if (fixedNodeIdx in 0 until totalNodes) {
                 val nodeX = viewportState.worldToScreenX(
-                    worldX = construction.nodePositionOnAxis(fixedNodeIdx),
+                    worldX = construction.displayNodePositionOnAxis(fixedNodeIdx),
                     canvasWidth = canvasWidth,
                     totalConstructionLength = totalLength,
                 )
@@ -329,9 +369,9 @@ fun ConstructionCanvas(
         for (nodeIdx in construction.nodeForces.indices) {
             if (nodeIdx !in 0 until totalNodes) continue
             val force = construction.nodeForces[nodeIdx]
-            if (abs(force) > CanvasDefaults.FLOAT_EPSILON) {
+            if (showLoads && abs(force) > CanvasDefaults.FLOAT_EPSILON) {
                 val nodeX = viewportState.worldToScreenX(
-                    worldX = construction.nodePositionOnAxis(nodeIdx),
+                    worldX = construction.displayNodePositionOnAxis(nodeIdx),
                     canvasWidth = canvasWidth,
                     totalConstructionLength = totalLength,
                 )
@@ -360,18 +400,67 @@ fun ConstructionCanvas(
             textStyle = scaledMonoStyle,
         )
 
-        drawAddButton(
-            buttonCenterX = buttonLeftX,
-            centerY = centerY,
-            scale = scale,
-            palette = palette,
-        )
-        drawAddButton(
-            buttonCenterX = buttonRightX,
-            centerY = centerY,
-            scale = scale,
-            palette = palette,
-        )
+        if (processorResult != null) {
+            drawProcessorResults(
+                construction = construction,
+                result = processorResult,
+                viewportState = viewportState,
+                canvasWidth = canvasWidth,
+                totalLength = totalLength,
+                centerY = centerY,
+                maxRodHeight = maxRodHeight,
+                scale = scale,
+                palette = palette,
+                textMeasurer = textMeasurer,
+                textStyle = scaledMonoStyle,
+            )
+        } else if (postprocessorResult != null) {
+            val displacementsArray = postprocessorResult.displacements.toDoubleArray()
+            if (inspectedRodIndex != null && inspectedLocalX != null && inspectedRodIndex in construction.rods.indices) {
+                val rod = construction.rods[inspectedRodIndex]
+                val clampedX = inspectedLocalX.coerceIn(0.0, rod.length)
+                val markerX = viewportState.worldToScreenX(
+                    worldX = construction.displaySectionWorldX(inspectedRodIndex, clampedX),
+                    canvasWidth = canvasWidth,
+                    totalConstructionLength = totalLength,
+                )
+                val rodHalfH = rodScreenHeight(rod, scale) / 2f + 10f * scale
+                drawLine(
+                    color = palette.rodSelectedBorder,
+                    start = Offset(markerX, centerY - rodHalfH),
+                    end = Offset(markerX, centerY + rodHalfH),
+                    strokeWidth = scaledStroke(2f, scale),
+                )
+            }
+            drawEpures(
+                construction = construction,
+                displacements = displacementsArray,
+                displayMode = epureDisplayMode,
+                viewportState = viewportState,
+                canvasWidth = canvasWidth,
+                totalLength = totalLength,
+                commonDimY = commonDimY,
+                scale = scale,
+                palette = epurePalette,
+                textMeasurer = textMeasurer,
+                textStyle = scaledMonoStyle,
+                inspectedRodIndex = inspectedRodIndex,
+                inspectedLocalX = inspectedLocalX,
+            )
+        } else {
+            drawAddButton(
+                buttonCenterX = buttonLeftX,
+                centerY = centerY,
+                scale = scale,
+                palette = palette,
+            )
+            drawAddButton(
+                buttonCenterX = buttonRightX,
+                centerY = centerY,
+                scale = scale,
+                palette = palette,
+            )
+        }
     }
 }
 
@@ -387,6 +476,8 @@ private fun handleCanvasTap(
     onClearSelection: () -> Unit,
     onAddRodLeft: () -> Unit,
     onAddRodRight: () -> Unit,
+    addButtonsEnabled: Boolean = true,
+    onInspectSection: ((Int, Double) -> Unit)? = null,
 ) {
     val centerY = canvasHeight / 2f + viewportState.panY
     val scale = viewportState.scaleFactor
@@ -409,7 +500,7 @@ private fun handleCanvasTap(
 
     for (nodeIdx in 0 until totalNodes) {
         val nodeX = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(nodeIdx),
+            worldX = construction.displayNodePositionOnAxis(nodeIdx),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
@@ -423,7 +514,7 @@ private fun handleCanvasTap(
         x = leftAddButtonCenterX(construction, viewportState, canvasWidth, totalLength, scale),
         y = centerY,
     )
-    if ((tapOffset - leftButtonCenter).getDistance() <= addButtonHitRadius) {
+    if (addButtonsEnabled && (tapOffset - leftButtonCenter).getDistance() <= addButtonHitRadius) {
         onAddRodLeft()
         return
     }
@@ -432,7 +523,7 @@ private fun handleCanvasTap(
         x = rightAddButtonCenterX(construction, viewportState, canvasWidth, totalLength, scale),
         y = centerY,
     )
-    if ((tapOffset - rightButtonCenter).getDistance() <= addButtonHitRadius) {
+    if (addButtonsEnabled && (tapOffset - rightButtonCenter).getDistance() <= addButtonHitRadius) {
         onAddRodRight()
         return
     }
@@ -440,12 +531,12 @@ private fun handleCanvasTap(
     for (rodIdx in construction.rods.indices) {
         val rod = construction.rods[rodIdx]
         val xLeft = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(rodIdx),
+            worldX = construction.displayNodePositionOnAxis(rodIdx),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
         val xRight = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(rodIdx + 1),
+            worldX = construction.displayNodePositionOnAxis(rodIdx + 1),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
@@ -454,11 +545,32 @@ private fun handleCanvasTap(
 
         if (tapOffset.x in xLeft..xRight && abs(tapOffset.y - centerY) <= hitHalfHeight) {
             onSelectRod(rodIdx)
+            if (onInspectSection != null && xRight > xLeft) {
+                val fraction = ((tapOffset.x - xLeft) / (xRight - xLeft)).toDouble().coerceIn(0.0, 1.0)
+                onInspectSection(rodIdx, rod.length * fraction)
+            }
             return
         }
     }
 
     onClearSelection()
+}
+
+internal fun displayRodLength(rod: Rod): Double {
+    val maxWorldLength = (CanvasDefaults.MAX_BASE_ROD_LENGTH / ViewportState.BASE_ZOOM).toDouble()
+    return rod.length.coerceAtMost(maxWorldLength)
+}
+
+internal fun Construction.displayNodePositionOnAxis(nodeIndex: Int): Double =
+    rods.take(nodeIndex).sumOf(::displayRodLength)
+
+internal fun Construction.displayTotalLength(): Double =
+    rods.sumOf(::displayRodLength)
+
+internal fun Construction.displaySectionWorldX(rodIndex: Int, localX: Double): Double {
+    val rod = rods[rodIndex]
+    val fraction = if (rod.length > 0.0) (localX / rod.length).coerceIn(0.0, 1.0) else 0.0
+    return displayNodePositionOnAxis(rodIndex) + displayRodLength(rod) * fraction
 }
 
 private fun baseRodHeight(rod: Rod): Float {
@@ -549,6 +661,8 @@ private fun DrawScope.drawRodsAndDimensions(
     construction: Construction,
     viewportState: ViewportState,
     selectedRodIndex: Int?,
+    overloadedRodIndices: Set<Int>,
+    postprocessorResult: CalculationState.Success?,
     canvasWidth: Float,
     totalLength: Double,
     centerY: Float,
@@ -557,6 +671,7 @@ private fun DrawScope.drawRodsAndDimensions(
     palette: CanvasPalette,
     textMeasurer: TextMeasurer,
     textStyle: TextStyle,
+    showLoads: Boolean = true,
 ) {
     val cornerRadius = CornerRadius(CanvasDefaults.BASE_ROD_CORNER_RADIUS * scale)
     val notchHalfLen = CanvasDefaults.BASE_DIMENSION_NOTCH_HALF_LEN * scale
@@ -566,12 +681,12 @@ private fun DrawScope.drawRodsAndDimensions(
     for (rodIdx in construction.rods.indices) {
         val rod = construction.rods[rodIdx]
         val xLeft = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(rodIdx),
+            worldX = construction.displayNodePositionOnAxis(rodIdx),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
         val xRight = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(rodIdx + 1),
+            worldX = construction.displayNodePositionOnAxis(rodIdx + 1),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
@@ -580,6 +695,18 @@ private fun DrawScope.drawRodsAndDimensions(
         val rodHeight = baseHeight * scale
         val rectTop = centerY - rodHeight / 2f
         val isSelected = selectedRodIndex == rodIdx
+        val isOverloaded = rodIdx in overloadedRodIndices
+
+        val fillColor = when {
+            isOverloaded -> palette.rodOverloadFill
+            isSelected -> palette.rodSelectedFill
+            else -> palette.rodFill
+        }
+        val borderColor = when {
+            isOverloaded -> palette.rodOverloadBorder
+            isSelected -> palette.rodSelectedBorder
+            else -> palette.rodBorder
+        }
 
         drawRoundRect(
             color = palette.canvasBase,
@@ -588,19 +715,19 @@ private fun DrawScope.drawRodsAndDimensions(
             cornerRadius = cornerRadius,
         )
         drawRoundRect(
-            color = if (isSelected) palette.rodSelectedFill else palette.rodFill,
+            color = fillColor,
             topLeft = Offset(xLeft, rectTop),
             size = Size(rodWidth, rodHeight),
             cornerRadius = cornerRadius,
         )
         drawRoundRect(
-            color = if (isSelected) palette.rodSelectedBorder else palette.rodBorder,
+            color = borderColor,
             topLeft = Offset(xLeft, rectTop),
             size = Size(rodWidth, rodHeight),
             cornerRadius = cornerRadius,
             style = Stroke(
                 width = scaledStroke(
-                    baseWidth = if (isSelected) {
+                    baseWidth = if (isSelected || isOverloaded) {
                         CanvasDefaults.BASE_ROD_SELECTED_STROKE_WIDTH
                     } else {
                         CanvasDefaults.BASE_ROD_STROKE_WIDTH
@@ -610,7 +737,7 @@ private fun DrawScope.drawRodsAndDimensions(
             ),
         )
 
-        if (abs(rod.distributedLoad) > CanvasDefaults.FLOAT_EPSILON) {
+        if (showLoads && abs(rod.distributedLoad) > CanvasDefaults.FLOAT_EPSILON) {
             drawDistributedLoad(
                 textMeasurer = textMeasurer,
                 load = rod.distributedLoad,
@@ -678,7 +805,7 @@ private fun DrawScope.drawRodsAndDimensions(
         )
 
         val lengthText = textMeasurer.measure(
-            text = "${rod.length}L",
+            text = "${formatCalculationValue(rod.length)}L",
             style = textStyle.copy(color = palette.dimension),
         )
         drawText(
@@ -713,7 +840,7 @@ private fun DrawScope.drawDimensionExtensionLines(
 
     for (nodeIdx in 0 until totalNodes) {
         val nodeX = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(nodeIdx),
+            worldX = construction.displayNodePositionOnAxis(nodeIdx),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
@@ -813,7 +940,7 @@ private fun DrawScope.drawNodalForce(
     }
     drawPath(path = arrowPath, color = color)
 
-    val text = textMeasurer.measure("${abs(force)}F", textStyle.copy(color = color))
+    val text = textMeasurer.measure("${formatCalculationValue(abs(force))}F", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
@@ -874,7 +1001,7 @@ private fun DrawScope.drawDistributedLoad(
         }
     }
 
-    val text = textMeasurer.measure("${abs(load)}q", textStyle.copy(color = color))
+    val text = textMeasurer.measure("${formatCalculationValue(abs(load))}q", textStyle.copy(color = color))
     drawText(
         textLayoutResult = text,
         topLeft = Offset(
@@ -902,7 +1029,7 @@ private fun DrawScope.drawNodes(
 
     for (nodeIdx in 0 until totalNodes) {
         val nodeX = viewportState.worldToScreenX(
-            worldX = construction.nodePositionOnAxis(nodeIdx),
+            worldX = construction.displayNodePositionOnAxis(nodeIdx),
             canvasWidth = canvasWidth,
             totalConstructionLength = totalLength,
         )
@@ -952,6 +1079,70 @@ private fun DrawScope.drawNodes(
                 y = centerY - nodeNumberText.size.height / 2f,
             ),
         )
+    }
+}
+
+private fun DrawScope.drawCenteredLabel(
+    textMeasurer: TextMeasurer,
+    text: String,
+    centerX: Float,
+    bottomY: Float,
+    color: Color,
+    textStyle: TextStyle,
+) {
+    val layout = textMeasurer.measure(text, textStyle.copy(color = color))
+    drawText(
+        textLayoutResult = layout,
+        topLeft = Offset(centerX - layout.size.width / 2f, bottomY - layout.size.height),
+    )
+}
+
+private fun DrawScope.drawProcessorResults(
+    construction: Construction,
+    result: CalculationState.Success,
+    viewportState: ViewportState,
+    canvasWidth: Float,
+    totalLength: Double,
+    centerY: Float,
+    maxRodHeight: Float,
+    scale: Float,
+    palette: CanvasPalette,
+    textMeasurer: TextMeasurer,
+    textStyle: TextStyle,
+) {
+    val gap = CanvasDefaults.BASE_RESULT_ROW_GAP * scale
+    val sampleHeight = textMeasurer.measure("0", textStyle).size.height.toFloat()
+    val displacementBottomY = centerY - maxRodHeight / 2f - gap
+    val reactionBottomY = displacementBottomY - sampleHeight - gap / 2f
+
+    for (nodeIdx in 0 until construction.nodeCount) {
+        val nodeX = viewportState.worldToScreenX(
+            worldX = construction.displayNodePositionOnAxis(nodeIdx),
+            canvasWidth = canvasWidth,
+            totalConstructionLength = totalLength,
+        )
+
+        result.displacements.getOrNull(nodeIdx)?.let { delta ->
+            drawCenteredLabel(
+                textMeasurer = textMeasurer,
+                text = "Δ${nodeIdx + 1}=${formatCalculationValue(delta)}",
+                centerX = nodeX,
+                bottomY = displacementBottomY,
+                color = palette.forceAndLoad,
+                textStyle = textStyle,
+            )
+        }
+
+        result.reactions[nodeIdx]?.let { reaction ->
+            drawCenteredLabel(
+                textMeasurer = textMeasurer,
+                text = "R${nodeIdx + 1}=${formatCalculationValue(reaction)}",
+                centerX = nodeX,
+                bottomY = reactionBottomY,
+                color = palette.onNode,
+                textStyle = textStyle,
+            )
+        }
     }
 }
 

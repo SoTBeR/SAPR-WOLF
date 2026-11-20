@@ -74,20 +74,13 @@
 
     <string name="postprocessor_epure_all">Все</string>
     <string name="postprocessor_epure_none">Скрыть</string>
-    <string name="postprocessor_show_panels">Показать панели</string>
-    <string name="postprocessor_hide_panels">Скрыть панели</string>
-    <string name="postprocessor_tab_rods">Стержни</string>
-    <string name="postprocessor_tab_nodes">Узлы</string>
+    <string name="postprocessor_tab_table">Таблица</string>
     <string name="postprocessor_tab_plots">Графики</string>
-    <string name="postprocessor_step_mode">Шаг x</string>
-    <string name="postprocessor_col_rod">Ст.</string>
-    <string name="postprocessor_equilibrium_residual">Невязка равновесия ΣR + ΣF + Σ(q·L) = %1$s</string>
+    <string name="postprocessor_col_rod">Стержень</string>
     <string name="postprocessor_section_title">Сечение</string>
-    <string name="postprocessor_rod_short">Ст. №%1$d</string>
-    <string name="postprocessor_strength_ok">Прочность обеспечена (n ≥ 1)</string>
-    <string name="postprocessor_strength_overload">Перегруз (n &lt; 1): ст. %1$s</string>
-    <string name="postprocessor_most_loaded">Самый нагруженный</string>
-    <string name="postprocessor_most_loaded_value">Ст. №%1$d (n=%2$s)</string>
+    <string name="postprocessor_strength_ok">Прочность обеспечена</string>
+    <string name="postprocessor_strength_overload">Перегруз (n &lt; 1): стержень %1$s</string>
+    <string name="postprocessor_most_loaded">Самый нагруженный стержень</string>
 
     <string name="dialog_export_report_title">Экспорт отчёта</string>
     <string name="dialog_export_report_message">Выберите формат файла отчёта по результатам расчёта:</string>

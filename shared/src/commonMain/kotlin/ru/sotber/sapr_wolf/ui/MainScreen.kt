@@ -11,6 +11,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.key.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,7 +20,11 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Rod
+import ru.sotber.sapr_wolf.postprocessor.ReportFormat
+import ru.sotber.sapr_wolf.ui.components.CalculationErrorDialog
 import ru.sotber.sapr_wolf.ui.components.ConstructionCanvas
+import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.ExportReportDialog
 import ru.sotber.sapr_wolf.ui.components.mainAppBar.MainAppBar
 import ru.sotber.sapr_wolf.ui.components.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
@@ -46,12 +52,19 @@ fun MainScreen(
         onStartProject = viewModel::startNewProject,
         onOpenProject = viewModel::openProjectFromFile,
         onSaveProject = viewModel::saveProjectToFile,
+        onSaveProjectAs = viewModel::saveProjectAsToFile,
         onDismissFileDialogAlert = viewModel::dismissFileDialogAlert,
+        onDismissCalculationError = viewModel::dismissCalculationError,
         onUndo = viewModel::undo,
         onRedo = viewModel::redo,
         onSelectStage = viewModel::selectStage,
         onCalculate = viewModel::calculate,
+        onSelectEpureMode = viewModel::setEpureDisplayMode,
+        onInspectSection = viewModel::inspectSection,
         onToggleTheme = onToggleTheme,
+        onExportReport = viewModel::openExportReportDialog,
+        onConfirmExportReport = viewModel::exportReport,
+        onDismissExportReportDialog = viewModel::dismissExportReportDialog,
     )
 }
 
@@ -72,13 +85,19 @@ fun MainScreenContent(
     onStartProject: (Boolean) -> Unit = {},
     onOpenProject: () -> Unit = {},
     onSaveProject: () -> Unit = {},
+    onSaveProjectAs: () -> Unit = {},
     onDismissFileDialogAlert: () -> Unit = {},
+    onDismissCalculationError: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onSelectStage: (AppStage) -> Unit = {},
     onCalculate: () -> Unit = {},
+    onSelectEpureMode: (EpureDisplayMode) -> Unit = {},
+    onInspectSection: (Int, Double) -> Unit = { _, _ -> },
     onToggleTheme: () -> Unit = {},
     onExportReport: () -> Unit = {},
+    onConfirmExportReport: (ReportFormat) -> Unit = {},
+    onDismissExportReportDialog: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
 ) {
     val viewportState = remember { ViewportState() }
@@ -97,12 +116,18 @@ fun MainScreenContent(
     val mainAppBarRowsHazeState = rememberHazeState()
     val extraColors = MaterialThemeExtraColors
 
+    val processorResult = (uiState.calculationState as? CalculationState.Success)
+        ?.takeIf { uiState.selectedStage == AppStage.Processor }
+    val postprocessorResult = (uiState.calculationState as? CalculationState.Success)
+        ?.takeIf { uiState.selectedStage == AppStage.Postprocessor }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(extraColors.canvasBase)
             .focusRequester(focusRequester)
             .focusable()
+            .onPreviewKeyEvent { uiState.isFileDialogOpen }
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Spacebar) {
                     val isShift = keyEvent.isShiftPressed
@@ -123,6 +148,15 @@ fun MainScreenContent(
                     } else {
                         onUndo()
                     }
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Y && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onRedo()
 
                     true
                 } else {
@@ -172,7 +206,7 @@ fun MainScreenContent(
                     val isShift = keyEvent.isShiftPressed
 
                     if (isShift) {
-                        onSaveProject() // SaveAs
+                        onSaveProjectAs()
                     } else {
                         onSaveProject()
                     }
@@ -209,6 +243,11 @@ fun MainScreenContent(
                 .background(extraColors.canvasBase),
             construction = uiState.construction,
             viewportState = viewportState,
+            processorResult = processorResult,
+            postprocessorResult = postprocessorResult,
+            epureDisplayMode = uiState.epureDisplayMode,
+            inspectedRodIndex = uiState.inspectedRodIndex,
+            inspectedLocalX = uiState.inspectedLocalX,
             selectedRodIndex = uiState.selectedRodIndex,
             selectedNodeIndex = uiState.selectedNodeIndex,
             onSelectRod = { rodIdx ->
@@ -231,19 +270,32 @@ fun MainScreenContent(
                 focusRequester.requestFocus()
                 onAddRodRight()
             },
+            onInspectSection = if (postprocessorResult != null) {
+                { rodIdx, localX ->
+                    focusRequester.requestFocus()
+                    onInspectSection(rodIdx, localX)
+                }
+            } else {
+                null
+            },
         )
 
         MainAppBar(
             rowsHazeState = mainAppBarRowsHazeState,
             construction = uiState.construction,
+            projectName = uiState.projectName,
             selectedStage = uiState.selectedStage,
             isProcessorEnabled = uiState.isProcessorEnabled,
             isPostprocessorEnabled = uiState.isPostprocessorEnabled,
+            epureDisplayMode = uiState.epureDisplayMode,
+            inspectedRodIndex = uiState.inspectedRodIndex,
+            inspectedLocalX = uiState.inspectedLocalX,
             zoomLabel = viewportState.zoomPercent,
             canUndo = uiState.canUndo,
             canRedo = uiState.canRedo,
             canCalculate = uiState.canCalculate,
             validationIssues = uiState.validationIssues,
+            calculationState = uiState.calculationState,
             selectedRodIndex = uiState.selectedRodIndex,
             selectedNodeIndex = uiState.selectedNodeIndex,
             onSelectRod = { rodIdx ->
@@ -289,6 +341,10 @@ fun MainScreenContent(
                 focusRequester.requestFocus()
                 onSaveProject()
             },
+            onSaveProjectAs = {
+                focusRequester.requestFocus()
+                onSaveProjectAs()
+            },
             onUndo = {
                 focusRequester.requestFocus()
                 onUndo()
@@ -305,6 +361,11 @@ fun MainScreenContent(
                 focusRequester.requestFocus()
                 onCalculate()
             },
+            onSelectEpureMode = { mode ->
+                focusRequester.requestFocus()
+                onSelectEpureMode(mode)
+            },
+            onInspectSection = onInspectSection,
             onResetScale = {
                 focusRequester.requestFocus()
                 viewportState.resetTo1to1()
@@ -313,9 +374,51 @@ fun MainScreenContent(
                 focusRequester.requestFocus()
                 onToggleTheme()
             },
-            onExportReport = onExportReport,
+            onExportReport = {
+                focusRequester.requestFocus()
+                onExportReport()
+            },
             onOpenSettings = onOpenSettings,
         )
+
+        if (uiState.isFileDialogOpen) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.08f))
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent().changes.forEach { it.consume() }
+                            }
+                        }
+                    },
+            )
+        }
+
+        if (uiState.isExportReportDialogOpen) {
+            ExportReportDialog(
+                onSelectFormat = { format ->
+                    onConfirmExportReport(format)
+                    focusRequester.requestFocus()
+                },
+                onDismiss = {
+                    onDismissExportReportDialog()
+                    focusRequester.requestFocus()
+                },
+            )
+        }
+
+        val calculationError = uiState.calculationState as? CalculationState.Error
+        if (calculationError != null) {
+            CalculationErrorDialog(
+                error = calculationError,
+                onDismiss = {
+                    onDismissCalculationError()
+                    focusRequester.requestFocus()
+                },
+            )
+        }
 
         val alert = uiState.fileDialogAlert
         if (alert != null) {

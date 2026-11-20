@@ -1,25 +1,32 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.model.ValidationIssue
 import ru.sotber.sapr_wolf.model.nodeCount
+import ru.sotber.sapr_wolf.ui.CalculationState
+import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.MonoTextStyle
+import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
 import sapr_wolf.shared.generated.resources.*
 import kotlin.math.roundToInt
 
@@ -28,14 +35,19 @@ fun MainAppBar(
     rowsHazeState: HazeState,
     modifier: Modifier = Modifier,
     construction: Construction = Construction(),
+    projectName: String? = null,
     selectedStage: AppStage = AppStage.Preprocessor,
     isProcessorEnabled: Boolean = true,
     isPostprocessorEnabled: Boolean = false,
+    epureDisplayMode: EpureDisplayMode = EpureDisplayMode.All,
+    inspectedRodIndex: Int? = null,
+    inspectedLocalX: Double = 0.0,
     zoomLabel: Double = 100.0,
     canUndo: Boolean = true,
     canRedo: Boolean = true,
     canCalculate: Boolean = true,
     validationIssues: List<ValidationIssue> = emptyList(),
+    calculationState: CalculationState = CalculationState.Idle,
     selectedRodIndex: Int? = null,
     selectedNodeIndex: Int? = null,
     onSelectRod: (Int) -> Unit = {},
@@ -50,10 +62,13 @@ fun MainAppBar(
     onStartProject: () -> Unit = {},
     onOpenProject: () -> Unit = {},
     onSaveProject: () -> Unit = {},
+    onSaveProjectAs: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
     onSelectStage: (AppStage) -> Unit = {},
     onCalculate: () -> Unit = {},
+    onSelectEpureMode: (EpureDisplayMode) -> Unit = {},
+    onInspectSection: (Int, Double) -> Unit = { _, _ -> },
     onResetScale: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
     onExportReport: () -> Unit = {},
@@ -72,75 +87,140 @@ fun MainAppBar(
 
     var leftRowWidthPx by remember { mutableIntStateOf(0) }
     var rightRowWidthPx by remember { mutableIntStateOf(0) }
+    var isFileMenuExpanded by remember { mutableStateOf(false) }
 
-    Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = MaterialThemeSpacing.floatingMargin,
-                vertical = MaterialThemeSpacing.floatingMargin,
-            ),
+    val processorResult = (calculationState as? CalculationState.Success)
+        ?.takeIf { selectedStage == AppStage.Processor }
+    val postprocessorResult = (calculationState as? CalculationState.Success)
+        ?.takeIf { selectedStage == AppStage.Postprocessor }
+
+    Box(
+        modifier = modifier.fillMaxSize(),
     ) {
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.SpaceBetween,
-            modifier = if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty()) {
-                Modifier.fillMaxHeight()
-            } else {
-                Modifier
-            },
+        if (isFileMenuExpanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            isFileMenuExpanded = false
+                        }
+                    },
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = MaterialThemeSpacing.floatingMargin,
+                    vertical = MaterialThemeSpacing.floatingMargin,
+                ),
         ) {
-            MainAppBarRow(
-                hazeState = rowsHazeState,
-                modifier = Modifier.onSizeChanged { size ->
-                    leftRowWidthPx = size.width
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty()) {
+                    Modifier.fillMaxHeight()
+                } else {
+                    Modifier
                 },
             ) {
-                MainAppBarButton(
-                    iconRes = Res.drawable.ic_start_project,
-                    textRes = Res.string.start_project,
-                    onClick = onStartProject,
-                )
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.medium),
+                ) {
+                    MainAppBarRow(
+                        hazeState = rowsHazeState,
+                        modifier = Modifier.onSizeChanged { size ->
+                            leftRowWidthPx = size.width
+                        },
+                    ) {
+                        MainAppBarButton(
+                            iconRes = Res.drawable.ic_file_menu,
+                            textRes = Res.string.file_menu,
+                            isSelected = isFileMenuExpanded,
+                            onClick = {
+                                isFileMenuExpanded = !isFileMenuExpanded
+                            },
+                        )
 
-                MainAppBarButton(
-                    iconRes = Res.drawable.ic_open_project,
-                    textRes = Res.string.open_project,
-                    onClick = onOpenProject,
-                )
+                        MainAppBarButton(
+                            iconRes = Res.drawable.ic_start_project,
+                            textRes = Res.string.start_project,
+                            onClick = {
+                                isFileMenuExpanded = false
+                                onStartProject()
+                            },
+                        )
 
-                MainAppBarButton(
-                    iconRes = Res.drawable.ic_save_project,
-                    textRes = Res.string.save_project,
-                    onClick = onSaveProject,
-                )
+                        if (!projectName.isNullOrBlank()) {
+                            MainAppBarRowDivider()
 
-                MainAppBarRowDivider()
+                            Text(
+                                text = projectName,
+                                style = MaterialTheme.typography.labelMediumBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .widthIn(max = 200.dp)
+                                    .padding(horizontal = MaterialThemeSpacing.small),
+                            )
+                        }
 
-                MainAppBarIconButton(
-                    iconRes = Res.drawable.ic_undo,
-                    enabled = canUndo,
-                    onClick = onUndo,
-                )
+                        MainAppBarRowDivider()
 
-                MainAppBarIconButton(
-                    iconRes = Res.drawable.ic_redo,
-                    enabled = canRedo,
-                    onClick = onRedo,
-                )
+                        MainAppBarIconButton(
+                            iconRes = Res.drawable.ic_undo,
+                            enabled = canUndo,
+                            onClick = {
+                                isFileMenuExpanded = false
+                                onUndo()
+                            },
+                        )
+
+                        MainAppBarIconButton(
+                            iconRes = Res.drawable.ic_redo,
+                            enabled = canRedo,
+                            onClick = {
+                                isFileMenuExpanded = false
+                                onRedo()
+                            },
+                        )
+                    }
+
+                    if (isFileMenuExpanded) {
+                        MainAppBarFileMenu(
+                            hazeState = rowsHazeState,
+                            onOpenProject = {
+                                isFileMenuExpanded = false
+                                onOpenProject()
+                            },
+                            onSaveProject = {
+                                isFileMenuExpanded = false
+                                onSaveProject()
+                            },
+                            onSaveProjectAs = {
+                                isFileMenuExpanded = false
+                                onSaveProjectAs()
+                            },
+                        )
+                    }
+                }
+
+                if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty() && leftRowWidthPx > 0) {
+                    val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
+
+                    MainAppBarValidationIssues(
+                        hazeState = rowsHazeState,
+                        issues = validationIssues,
+                        modifier = Modifier.width(leftPanelWidth),
+                    )
+                }
             }
-
-            if (selectedStage == AppStage.Preprocessor && validationIssues.isNotEmpty() && leftRowWidthPx > 0) {
-                val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
-
-                MainAppBarValidationIssues(
-                    hazeState = rowsHazeState,
-                    issues = validationIssues,
-                    modifier = Modifier.width(leftPanelWidth),
-                )
-            }
-        }
 
         MainAppBarRow(
             hazeState = rowsHazeState,
@@ -228,11 +308,12 @@ fun MainAppBar(
 
                 MainAppBarIconButton(
                     iconRes = Res.drawable.ic_export_report,
+                    enabled = isPostprocessorEnabled,
                     onClick = onExportReport,
                 )
 
                 MainAppBarIconButton(
-                    iconRes = Res.drawable.ic_settings,
+                    iconRes = Res.drawable.ic_info,
                     onClick = onOpenSettings,
                 )
             }
@@ -297,6 +378,103 @@ fun MainAppBar(
                     }
                 }
             }
+
+            if (postprocessorResult != null) {
+                MainAppBarEpureSelector(
+                    hazeState = rowsHazeState,
+                    selectedMode = epureDisplayMode,
+                    onSelectMode = onSelectEpureMode,
+                )
+            }
         }
+    }
+
+        if (processorResult != null && leftRowWidthPx > 0) {
+            val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
+
+            MainAppBarProcessorNodesTable(
+                hazeState = rowsHazeState,
+                construction = construction,
+                result = processorResult,
+                selectedNodeIndex = selectedNodeIndex,
+                onSelectNode = onSelectNode,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(MaterialThemeSpacing.floatingMargin)
+                    .width(leftPanelWidth),
+            )
+        }
+
+        if (postprocessorResult != null && leftRowWidthPx > 0 && construction.rods.isNotEmpty()) {
+            val leftPanelWidth = with(density) { leftRowWidthPx.toDp() }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(MaterialThemeSpacing.medium),
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(MaterialThemeSpacing.floatingMargin)
+                    .width(leftPanelWidth),
+            ) {
+                MainAppBarPostprocessorSectionPanel(
+                    hazeState = rowsHazeState,
+                    construction = construction,
+                    result = postprocessorResult,
+                    selectedRodIndex = selectedRodIndex,
+                    inspectedRodIndex = inspectedRodIndex,
+                    inspectedLocalX = inspectedLocalX,
+                    onInspectSection = onInspectSection,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                MainAppBarPostprocessorResultsTable(
+                    hazeState = rowsHazeState,
+                    construction = construction,
+                    result = postprocessorResult,
+                    selectedRodIndex = selectedRodIndex,
+                    inspectedRodIndex = inspectedRodIndex,
+                    inspectedLocalX = inspectedLocalX,
+                    onInspectSection = onInspectSection,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainAppBarFileMenu(
+    hazeState: HazeState,
+    onOpenProject: () -> Unit,
+    onSaveProject: () -> Unit,
+    onSaveProjectAs: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    MainAppBarColumn(
+        hazeState = hazeState,
+        modifier = modifier.width(IntrinsicSize.Max),
+    ) {
+        MainAppBarButton(
+            iconRes = Res.drawable.ic_open_project,
+            textRes = Res.string.open_project,
+            contentAlignment = Alignment.Start,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onOpenProject,
+        )
+
+        MainAppBarButton(
+            iconRes = Res.drawable.ic_save_project,
+            textRes = Res.string.save_project,
+            contentAlignment = Alignment.Start,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onSaveProject,
+        )
+
+        MainAppBarButton(
+            iconRes = Res.drawable.ic_save_as_project,
+            textRes = Res.string.save_project_as,
+            contentAlignment = Alignment.Start,
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onSaveProjectAs,
+        )
     }
 }

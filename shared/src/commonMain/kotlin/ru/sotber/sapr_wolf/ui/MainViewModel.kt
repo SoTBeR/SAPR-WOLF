@@ -12,17 +12,23 @@ import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.model.nodeCount
+import ru.sotber.sapr_wolf.postprocessor.ReportFormat
 import ru.sotber.sapr_wolf.postprocessor.analyzeStrength
+import ru.sotber.sapr_wolf.postprocessor.buildReport
 import ru.sotber.sapr_wolf.postprocessor.calculateEquilibriumResidual
 import ru.sotber.sapr_wolf.postprocessor.calculateReactions
 import ru.sotber.sapr_wolf.preprocessor.*
 import ru.sotber.sapr_wolf.processor.calculateDisplacements
+import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
 import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.dialog_default_project_filename
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    private val fileGateway: ProjectFileGateway = ProjectFileDialog,
+) : ViewModel() {
     private val undoStack = ArrayDeque<Construction>()
     private val redoStack = ArrayDeque<Construction>()
+    private var currentProjectFile: ProjectFileHandle? = null
 
     private val _uiState = MutableStateFlow(createInitialState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -31,11 +37,18 @@ class MainViewModel : ViewModel() {
         val current = _uiState.value
 
         if (rodIndex !in current.construction.rods.indices) return
+        val rodLength = current.construction.rods[rodIndex].length
 
         _uiState.update {
             it.copy(
                 selectedRodIndex = rodIndex,
                 selectedNodeIndex = null,
+                inspectedRodIndex = rodIndex,
+                inspectedLocalX = if (it.inspectedRodIndex == rodIndex) {
+                    it.inspectedLocalX.coerceIn(0.0, rodLength)
+                } else {
+                    0.0
+                },
             )
         }
     }
@@ -79,6 +92,71 @@ class MainViewModel : ViewModel() {
             AppStage.Postprocessor -> {
                 if (current.isCalculated) {
                     _uiState.update { it.copy(selectedStage = AppStage.Postprocessor) }
+                }
+            }
+        }
+    }
+
+    fun setEpureDisplayMode(mode: EpureDisplayMode) {
+        _uiState.update { it.copy(epureDisplayMode = mode) }
+    }
+
+    fun inspectSection(rodIndex: Int, localX: Double) {
+        val current = _uiState.value
+        if (rodIndex !in current.construction.rods.indices) return
+        val clampedX = localX.coerceIn(0.0, current.construction.rods[rodIndex].length)
+
+        _uiState.update {
+            it.copy(
+                selectedRodIndex = rodIndex,
+                selectedNodeIndex = null,
+                inspectedRodIndex = rodIndex,
+                inspectedLocalX = clampedX,
+            )
+        }
+    }
+
+    fun openExportReportDialog() {
+        val current = _uiState.value
+        if (!current.isCalculated || current.isFileDialogOpen) return
+        _uiState.update { it.copy(isExportReportDialogOpen = true) }
+    }
+
+    fun dismissExportReportDialog() {
+        _uiState.update { it.copy(isExportReportDialogOpen = false) }
+    }
+
+    fun exportReport(format: ReportFormat) {
+        val current = _uiState.value
+        val result = current.calculationState as? CalculationState.Success ?: return
+        if (current.isFileDialogOpen) return
+
+        _uiState.update { it.copy(isExportReportDialogOpen = false) }
+
+        viewModelScope.launch {
+            withFileDialogLock {
+                val reportContent = buildReport(
+                    construction = current.construction,
+                    displacements = result.displacements.toDoubleArray(),
+                    projectName = current.projectName,
+                    format = format,
+                )
+                val defaultFileName = current.projectName
+                    ?: runCatching { getString(Res.string.dialog_default_project_filename) }
+                        .getOrDefault("project")
+
+                val saveResult = fileGateway.saveReportFile(
+                    defaultFileName = defaultFileName,
+                    extension = format.extension,
+                    content = reportContent,
+                ) ?: return@launch
+
+                saveResult.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
+                        )
+                    }
                 }
             }
         }
@@ -323,20 +401,65 @@ class MainViewModel : ViewModel() {
     }
 
     fun startNewProject(defaultConstruction: Boolean = false) {
+        currentProjectFile = null
+
+        val targetConstruction = if (defaultConstruction) {
+            Construction.defaultDemoConstruction()
+        } else {
+            Construction()
+        }
+
+        if (targetConstruction == _uiState.value.construction) {
+            _uiState.update {
+                it.copy(
+                    projectName = null,
+                    selectedRodIndex = null,
+                    selectedNodeIndex = null,
+                )
+            }
+            return
+        }
+
         modifyConstruction(
-            newConstruction = if (defaultConstruction) Construction.defaultDemoConstruction() else Construction(),
+            newConstruction = targetConstruction,
+            projectName = null,
             transformSelectedRod = { null },
             transformSelectedNode = { null },
         )
     }
 
     fun openProjectFromFile() {
+        if (_uiState.value.isFileDialogOpen) return
         viewModelScope.launch {
-            val result = ProjectFileDialog.pickJsonFileToOpen() ?: return@launch
+            executeOpenProjectFromFile()
+        }
+    }
+
+    fun saveProjectToFile() {
+        if (_uiState.value.isFileDialogOpen) return
+        viewModelScope.launch {
+            executeSaveProjectToFile()
+        }
+    }
+
+    fun saveProjectAsToFile() {
+        if (_uiState.value.isFileDialogOpen) return
+        viewModelScope.launch {
+            executeSaveProjectAsToFile()
+        }
+    }
+
+    internal suspend fun executeOpenProjectFromFile() {
+        withFileDialogLock {
+            val result = fileGateway.pickJsonFileToOpen() ?: return
 
             result
-                .onSuccess { jsonContent ->
-                    loadProjectFromJson(jsonContent)
+                .onSuccess { openedFile ->
+                    loadProjectFromJson(
+                        jsonString = openedFile.content,
+                        projectName = openedFile.projectName,
+                        projectFile = openedFile.file,
+                    )
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -348,24 +471,65 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun saveProjectToFile() {
-        viewModelScope.launch {
-            val defaultFileName = runCatching { getString(Res.string.dialog_default_project_filename) }
-                .getOrDefault("project.json")
+    internal suspend fun executeSaveProjectToFile() {
+        if (_uiState.value.isFileDialogOpen) return
+
+        val activeFile = currentProjectFile
+        if (activeFile == null) {
+            executeSaveProjectAsToFile()
+            return
+        }
+
+        val jsonContent = exportProjectToJson()
+
+        fileGateway.overwriteJsonFile(
+            file = activeFile,
+            content = jsonContent,
+        ).onFailure { error ->
+            _uiState.update {
+                it.copy(
+                    fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
+                )
+            }
+        }
+    }
+
+    internal suspend fun executeSaveProjectAsToFile() {
+        withFileDialogLock {
+            val defaultFileName = _uiState.value.projectName
+                ?: runCatching { getString(Res.string.dialog_default_project_filename) }
+                    .getOrDefault("project.json")
             val jsonContent = exportProjectToJson()
 
-            val result = ProjectFileDialog.saveJsonFile(
+            val result = fileGateway.saveJsonFileAs(
                 defaultFileName = defaultFileName,
                 content = jsonContent,
-            ) ?: return@launch
+            ) ?: return
 
-            result.onFailure { error ->
-                _uiState.update {
-                    it.copy(
-                        fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
-                    )
+            result
+                .onSuccess { savedFile ->
+                    currentProjectFile = savedFile.file
+                    _uiState.update {
+                        it.copy(projectName = savedFile.projectName)
+                    }
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
+                        )
+                    }
+                }
+        }
+    }
+
+    private suspend inline fun withFileDialogLock(block: () -> Unit) {
+        if (_uiState.value.isFileDialogOpen) return
+        _uiState.update { it.copy(isFileDialogOpen = true) }
+        try {
+            block()
+        } finally {
+            _uiState.update { it.copy(isFileDialogOpen = false) }
         }
     }
 
@@ -375,14 +539,30 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun loadProjectFromJson(jsonString: String): Result<NormalizationResult> = runCatching {
+    fun dismissCalculationError() {
+        _uiState.update { current ->
+            if (current.calculationState is CalculationState.Error) {
+                current.copy(calculationState = CalculationState.Idle)
+            } else {
+                current
+            }
+        }
+    }
+
+    fun loadProjectFromJson(
+        jsonString: String,
+        projectName: String? = null,
+        projectFile: ProjectFileHandle? = null,
+    ): Result<NormalizationResult> = runCatching {
         val normalizationResult = ProjectFileCodec.decodeAndNormalize(jsonString)
 
         undoStack.clear()
         redoStack.clear()
+        currentProjectFile = projectFile
 
         applyConstructionState(
             construction = normalizationResult.construction,
+            projectName = projectName,
             selectedRodIndex = null,
             selectedNodeIndex = null,
             fileDialogAlert = if (normalizationResult.wasModified) {
@@ -459,10 +639,21 @@ class MainViewModel : ViewModel() {
                 val strengths = analyzeStrength(current.construction, displacementsArray)
 
                 _uiState.update {
+                    val defaultRodIndex = it.selectedRodIndex
+                        ?.takeIf { idx -> idx in current.construction.rods.indices }
+                        ?: if (current.construction.rods.isNotEmpty()) 0 else null
+                    val defaultLocalX = if (defaultRodIndex != null) {
+                        it.inspectedLocalX.coerceIn(0.0, current.construction.rods[defaultRodIndex].length)
+                    } else {
+                        0.0
+                    }
+
                     it.copy(
                         selectedStage = targetStage,
                         isCalculated = true,
                         validationIssues = issues,
+                        inspectedRodIndex = defaultRodIndex,
+                        inspectedLocalX = defaultLocalX,
                         calculationState = CalculationState.Success(
                             displacements = displacementsArray.toList(),
                             reactions = reactions,
@@ -487,6 +678,7 @@ class MainViewModel : ViewModel() {
 
     private fun modifyConstruction(
         newConstruction: Construction,
+        projectName: String? = _uiState.value.projectName,
         transformSelectedRod: (Int?) -> Int? = { it },
         transformSelectedNode: (Int?) -> Int? = { it },
     ) {
@@ -501,6 +693,7 @@ class MainViewModel : ViewModel() {
 
         applyConstructionState(
             construction = newConstruction,
+            projectName = projectName,
             selectedRodIndex = transformSelectedRod(current.selectedRodIndex),
             selectedNodeIndex = transformSelectedNode(current.selectedNodeIndex),
         )
@@ -510,6 +703,7 @@ class MainViewModel : ViewModel() {
         construction: Construction,
         selectedRodIndex: Int?,
         selectedNodeIndex: Int?,
+        projectName: String? = _uiState.value.projectName,
         fileDialogAlert: FileDialogAlert? = _uiState.value.fileDialogAlert,
         incrementLoadVersion: Boolean = false,
     ) {
@@ -524,6 +718,7 @@ class MainViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 construction = construction,
+                projectName = projectName,
                 selectedStage = AppStage.Preprocessor,
                 isCalculated = false,
                 selectedRodIndex = validRodIndex,
