@@ -10,11 +10,18 @@ class AppViewModel : ViewModel() {
     private val _appTheme = MutableStateFlow(AppTheme.SYSTEM)
     val appTheme: StateFlow<AppTheme> = _appTheme.asStateFlow()
 
+    private val _isSplashVisible = MutableStateFlow(true)
+    val isSplashVisible: StateFlow<Boolean> = _isSplashVisible.asStateFlow()
+
     fun setAppTheme(theme: AppTheme) {
         _appTheme.value = theme
     }
 
     fun toggleAppTheme(currentlyDark: Boolean) {
         _appTheme.value = if (currentlyDark) AppTheme.LIGHT else AppTheme.DARK
+    }
+
+    fun dismissSplash() {
+        _isSplashVisible.value = false
     }
 }

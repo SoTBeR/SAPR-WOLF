@@ -1,41 +1,13 @@
-package ru.sotber.sapr_wolf.ui.components
+package ru.sotber.sapr_wolf.ui.components.dialogs
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -43,6 +15,7 @@ import androidx.compose.ui.window.DialogProperties
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
@@ -118,7 +91,9 @@ fun HelpDialog(
 
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .pointerCursor(),
                     ) {
                         Icon(
                             painter = painterResource(Res.drawable.ic_close),
@@ -154,7 +129,11 @@ fun HelpDialog(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Button(onClick = onDismiss) {
+                    Button(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.pointerCursor(),
+                    ) {
                         Text(text = stringResource(Res.string.dialog_help_close))
                     }
                 }
@@ -195,6 +174,7 @@ private fun HelpTabSelector(
                             MaterialTheme.colorScheme.surface.copy(alpha = 0f)
                         },
                     )
+                    .pointerCursor()
                     .clickable { onSelectTab(tab) }
                     .padding(
                         horizontal = MaterialThemeSpacing.small,
@@ -369,6 +349,14 @@ private fun HelpAboutContent() {
                 value = stringResource(Res.string.help_about_formats_value),
             )
         }
+
+        Text(
+            text = stringResource(Res.string.powered_by_sapp),
+            style = MonoSmallTextStyle,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 

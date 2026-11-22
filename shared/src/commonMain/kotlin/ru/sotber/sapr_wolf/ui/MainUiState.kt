@@ -1,9 +1,12 @@
 package ru.sotber.sapr_wolf.ui
 
-import ru.sotber.sapr_wolf.model.*
+import ru.sotber.sapr_wolf.model.AppStage
+import ru.sotber.sapr_wolf.model.Construction
+import ru.sotber.sapr_wolf.model.RodStrength
+import ru.sotber.sapr_wolf.model.ValidationIssue
 import ru.sotber.sapr_wolf.preprocessor.CalculationInvalidationReason
 import ru.sotber.sapr_wolf.preprocessor.NormalizationChange
-import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureDisplayMode
 
 sealed interface CalculationState {
     data object Idle : CalculationState

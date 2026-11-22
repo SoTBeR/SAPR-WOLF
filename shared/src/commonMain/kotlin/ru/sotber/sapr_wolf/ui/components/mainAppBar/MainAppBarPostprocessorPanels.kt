@@ -1,25 +1,9 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -43,17 +27,13 @@ import ru.sotber.sapr_wolf.postprocessor.PostprocessorSummary
 import ru.sotber.sapr_wolf.postprocessor.calculateSection
 import ru.sotber.sapr_wolf.postprocessor.summarizePostprocessor
 import ru.sotber.sapr_wolf.ui.CalculationState
-import ru.sotber.sapr_wolf.ui.components.EpureComponent
-import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
 import ru.sotber.sapr_wolf.ui.components.NumericTextField
-import ru.sotber.sapr_wolf.ui.components.PlotCanvas
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureComponent
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.canvas.PlotCanvas
 import ru.sotber.sapr_wolf.ui.formatTableValue
-import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
-import ru.sotber.sapr_wolf.ui.theme.MonoTextStyle
-import ru.sotber.sapr_wolf.ui.theme.Shapes
-import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
+import ru.sotber.sapr_wolf.ui.theme.*
 import sapr_wolf.shared.generated.resources.*
 import kotlin.math.abs
 
@@ -447,6 +427,7 @@ private fun PostprocessorRodsTable(
                                 .clip(Shapes.small)
                                 .background(rowBg)
                                 .border(width = 1.dp, color = rowBorder, shape = Shapes.small)
+                                .pointerCursor()
                                 .hoverable(interactionSource)
                                 .clickable(
                                     interactionSource = interactionSource,

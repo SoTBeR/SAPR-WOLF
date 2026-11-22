@@ -1,13 +1,15 @@
-package ru.sotber.sapr_wolf.ui.components
+package ru.sotber.sapr_wolf.ui.components.dialogs
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.localizedMessage
 import ru.sotber.sapr_wolf.ui.CalculationState
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.calculation_generic_error
@@ -39,7 +41,11 @@ fun CalculationErrorDialog(
             )
         },
         confirmButton = {
-            Button(onClick = onDismiss) {
+            Button(
+                onClick = onDismiss,
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.pointerCursor(),
+            ) {
                 Text(text = stringResource(Res.string.dialog_continue))
             }
         },

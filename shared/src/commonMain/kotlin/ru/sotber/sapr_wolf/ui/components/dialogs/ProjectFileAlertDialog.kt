@@ -1,15 +1,11 @@
-package ru.sotber.sapr_wolf.ui.components
+package ru.sotber.sapr_wolf.ui.components.dialogs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -18,6 +14,7 @@ import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.preprocessor.CalculationInvalidationReason
 import ru.sotber.sapr_wolf.preprocessor.localizedMessage
 import ru.sotber.sapr_wolf.ui.FileDialogAlert
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import sapr_wolf.shared.generated.resources.*
@@ -146,13 +143,21 @@ fun ProjectFileAlertDialog(
         confirmButton = {
             when (alert) {
                 is FileDialogAlert.ConfirmLegacyJsonConversion -> {
-                    Button(onClick = onConfirmLegacyJsonConversion) {
+                    Button(
+                        onClick = onConfirmLegacyJsonConversion,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.pointerCursor(),
+                    ) {
                         Text(text = stringResource(Res.string.dialog_yes))
                     }
                 }
 
                 else -> {
-                    Button(onClick = onDismiss) {
+                    Button(
+                        onClick = onDismiss,
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.pointerCursor(),
+                    ) {
                         Text(text = stringResource(Res.string.dialog_continue))
                     }
                 }
@@ -160,7 +165,11 @@ fun ProjectFileAlertDialog(
         },
         dismissButton = if (alert is FileDialogAlert.ConfirmLegacyJsonConversion) {
             {
-                TextButton(onClick = onCancelLegacyJsonConversion) {
+                TextButton(
+                    onClick = onCancelLegacyJsonConversion,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.pointerCursor(),
+                ) {
                     Text(text = stringResource(Res.string.dialog_no))
                 }
             }

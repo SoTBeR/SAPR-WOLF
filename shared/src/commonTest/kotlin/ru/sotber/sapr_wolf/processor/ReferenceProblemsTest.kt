@@ -6,11 +6,7 @@ import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.postprocessor.calculateEquilibriumResidual
 import ru.sotber.sapr_wolf.postprocessor.calculateReactions
 import kotlin.math.abs
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ReferenceProblemsTest {
 

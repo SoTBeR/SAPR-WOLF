@@ -3,17 +3,8 @@ package ru.sotber.sapr_wolf.ui.components.mainAppBar
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -26,6 +17,7 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
@@ -115,7 +107,7 @@ fun MainAppBarButton(
 
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.pointerCursor(enabled = enabled),
         enabled = enabled,
         shape = shape,
         color = containerColor,
@@ -181,7 +173,7 @@ fun MainAppBarIconButton(
 
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.pointerCursor(enabled = enabled),
         enabled = enabled,
         shape = shape,
         color = containerColor,

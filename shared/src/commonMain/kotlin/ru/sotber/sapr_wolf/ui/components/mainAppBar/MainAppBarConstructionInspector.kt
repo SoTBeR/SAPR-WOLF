@@ -1,17 +1,8 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.DividerDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,29 +16,12 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.ui.components.NumericTextField
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
 import ru.sotber.sapr_wolf.ui.theme.FieldShape
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
-import sapr_wolf.shared.generated.resources.Res
-import sapr_wolf.shared.generated.resources.ic_back
-import sapr_wolf.shared.generated.resources.ic_close
-import sapr_wolf.shared.generated.resources.ic_forward
-import sapr_wolf.shared.generated.resources.inspector_add_rod
-import sapr_wolf.shared.generated.resources.inspector_add_rod_left
-import sapr_wolf.shared.generated.resources.inspector_add_rod_right
-import sapr_wolf.shared.generated.resources.inspector_delete_rod
-import sapr_wolf.shared.generated.resources.inspector_field_allowable_stress
-import sapr_wolf.shared.generated.resources.inspector_field_area
-import sapr_wolf.shared.generated.resources.inspector_field_distributed_load
-import sapr_wolf.shared.generated.resources.inspector_field_length
-import sapr_wolf.shared.generated.resources.inspector_field_modulus
-import sapr_wolf.shared.generated.resources.inspector_field_node_force
-import sapr_wolf.shared.generated.resources.inspector_field_node_support
-import sapr_wolf.shared.generated.resources.inspector_node_title
-import sapr_wolf.shared.generated.resources.inspector_rod_title
-import sapr_wolf.shared.generated.resources.inspector_tab_node
-import sapr_wolf.shared.generated.resources.inspector_tab_rod
+import sapr_wolf.shared.generated.resources.*
 
 enum class InspectorTab {
     Rod,
@@ -431,6 +405,7 @@ fun MainAppBarNodeInspector(
                     checked = isNodeFixed,
                     onCheckedChange = { onToggleNodeFixed() },
                     modifier = Modifier
+                        .pointerCursor()
                         .graphicsLayer {
                             scaleX = 0.75f
                             scaleY = 0.75f

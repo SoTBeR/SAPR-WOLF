@@ -114,7 +114,7 @@
     <string name="dialog_export_report_open_after_export">Открыть отчёт после экспорта</string>
     <string name="dialog_export_report_cancel">Отмена</string>
 
-    <string name="dialog_help_title">Справка</string>
+    <string name="dialog_help_title">Справочная информация</string>
     <string name="dialog_help_close">Закрыть</string>
     <string name="dialog_help_tab_controls">Управление</string>
     <string name="dialog_help_tab_notation">Обозначения</string>
@@ -185,7 +185,7 @@
     <string name="help_symbol_local_x">x</string>
     <string name="help_desc_symbol_local_x">Локальная координата сечения вдоль стержня (x ∈ [0, L])</string>
     <string name="help_symbol_axial_force">Nx</string>
-    <string name="help_desc_symbol_axial_force">Продольная (осевая) сила в сечении стержня</string>
+    <string name="help_desc_symbol_axial_force">Продольная сила в сечении стержня</string>
     <string name="help_symbol_normal_stress">σx</string>
     <string name="help_desc_symbol_normal_stress">Нормальное напряжение в сечении (σx = Nx / A)</string>
     <string name="help_symbol_section_displacement">Ux</string>
@@ -193,7 +193,7 @@
     <string name="help_symbol_max_stress">σmax</string>
     <string name="help_desc_symbol_max_stress">Максимальное по модулю нормальное напряжение в стержне</string>
     <string name="help_symbol_safety_factor">n</string>
-    <string name="help_desc_symbol_safety_factor">Коэффициент запаса прочности (n = [σ] / σmax; прочность обеспечена при n ≥ 1)</string>
+    <string name="help_desc_symbol_safety_factor">Коэффициент запаса прочности (n = [σ] / σmax; прочность обеспечена при n >= 1)</string>
 
     <string name="help_about_description">Система автоматизированного проектирования и прочностного расчёта одномерных стержневых конструкций методом конечных элементов (МКЭ).</string>
     <string name="help_about_version_label">Версия</string>
@@ -202,4 +202,8 @@
     <string name="help_about_author_value">SoTBeR</string>
     <string name="help_about_formats_label">Форматы файлов</string>
     <string name="help_about_formats_value">Проекты: .sprw, .json | Отчёты: .html, .txt</string>
+
+    <string name="splash_version_badge">v%1$s</string>
+    <string name="splash_dismiss_hint">Нажмите в любом месте, чтобы продолжить</string>
+    <string name="powered_by_sapp">Powered by SAPP</string>
 </resources>

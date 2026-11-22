@@ -1,6 +1,9 @@
 package ru.sotber.sapr_wolf.preprocessor
 
-import ru.sotber.sapr_wolf.model.*
+import ru.sotber.sapr_wolf.model.AppStage
+import ru.sotber.sapr_wolf.model.Construction
+import ru.sotber.sapr_wolf.model.Rod
+import ru.sotber.sapr_wolf.model.SavedCalculation
 import ru.sotber.sapr_wolf.postprocessor.analyzeStrength
 import ru.sotber.sapr_wolf.postprocessor.calculateEquilibriumResidual
 import ru.sotber.sapr_wolf.postprocessor.calculateReactions

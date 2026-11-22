@@ -1,10 +1,6 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -25,13 +21,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import org.jetbrains.compose.resources.stringResource
-import ru.sotber.sapr_wolf.model.AppStage
-import ru.sotber.sapr_wolf.model.Construction
-import ru.sotber.sapr_wolf.model.Rod
-import ru.sotber.sapr_wolf.model.ValidationIssue
-import ru.sotber.sapr_wolf.model.nodeCount
+import ru.sotber.sapr_wolf.model.*
 import ru.sotber.sapr_wolf.ui.CalculationState
-import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureDisplayMode
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
 import ru.sotber.sapr_wolf.ui.theme.MonoTextStyle

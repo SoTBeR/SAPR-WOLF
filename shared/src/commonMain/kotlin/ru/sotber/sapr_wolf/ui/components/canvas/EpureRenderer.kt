@@ -1,4 +1,4 @@
-package ru.sotber.sapr_wolf.ui.components
+package ru.sotber.sapr_wolf.ui.components.canvas
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color

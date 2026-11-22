@@ -1,13 +1,9 @@
 package ru.sotber.sapr_wolf.preprocessor
 
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.*
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.dialogs.openFileWithDefaultApplication
-import io.github.vinceglb.filekit.name
-import io.github.vinceglb.filekit.readString
-import io.github.vinceglb.filekit.writeString
 
 class ProjectFileHandle(
     val platformFile: PlatformFile? = null,

@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.hazeSource
@@ -21,13 +21,13 @@ import dev.chrisbanes.haze.rememberHazeState
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Rod
 import ru.sotber.sapr_wolf.postprocessor.ReportFormat
-import ru.sotber.sapr_wolf.ui.components.CalculationErrorDialog
-import ru.sotber.sapr_wolf.ui.components.ConstructionCanvas
-import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
-import ru.sotber.sapr_wolf.ui.components.ExportReportDialog
-import ru.sotber.sapr_wolf.ui.components.HelpDialog
+import ru.sotber.sapr_wolf.ui.components.canvas.ConstructionCanvas
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.dialogs.CalculationErrorDialog
+import ru.sotber.sapr_wolf.ui.components.dialogs.ExportReportDialog
+import ru.sotber.sapr_wolf.ui.components.dialogs.HelpDialog
+import ru.sotber.sapr_wolf.ui.components.dialogs.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.components.mainAppBar.MainAppBar
-import ru.sotber.sapr_wolf.ui.components.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 
 @Composable

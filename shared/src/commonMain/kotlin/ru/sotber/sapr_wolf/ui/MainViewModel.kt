@@ -8,19 +8,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
-import ru.sotber.sapr_wolf.model.AppStage
-import ru.sotber.sapr_wolf.model.Construction
-import ru.sotber.sapr_wolf.model.Rod
-import ru.sotber.sapr_wolf.model.SavedCalculation
-import ru.sotber.sapr_wolf.model.nodeCount
-import ru.sotber.sapr_wolf.postprocessor.ReportFormat
-import ru.sotber.sapr_wolf.postprocessor.analyzeStrength
-import ru.sotber.sapr_wolf.postprocessor.buildReport
-import ru.sotber.sapr_wolf.postprocessor.calculateEquilibriumResidual
-import ru.sotber.sapr_wolf.postprocessor.calculateReactions
+import ru.sotber.sapr_wolf.model.*
+import ru.sotber.sapr_wolf.postprocessor.*
 import ru.sotber.sapr_wolf.preprocessor.*
 import ru.sotber.sapr_wolf.processor.calculateDisplacements
-import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
+import ru.sotber.sapr_wolf.ui.components.canvas.EpureDisplayMode
 import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.dialog_default_project_filename
 

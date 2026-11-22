@@ -1,13 +1,7 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DividerDefaults
@@ -20,17 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeState
 import org.jetbrains.compose.resources.stringResource
 import ru.sotber.sapr_wolf.model.ValidationIssue
 import ru.sotber.sapr_wolf.model.localizedMessage
-import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
-import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
-import ru.sotber.sapr_wolf.ui.theme.Shapes
-import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
+import ru.sotber.sapr_wolf.ui.theme.*
 import sapr_wolf.shared.generated.resources.Res
 import sapr_wolf.shared.generated.resources.validation_issues_title
 

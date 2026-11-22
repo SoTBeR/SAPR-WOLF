@@ -1,14 +1,11 @@
-package ru.sotber.sapr_wolf.ui.components
+package ru.sotber.sapr_wolf.ui.components.canvas
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -35,6 +32,7 @@ import ru.sotber.sapr_wolf.model.nodeCount
 import ru.sotber.sapr_wolf.ui.CalculationState
 import ru.sotber.sapr_wolf.ui.ViewportState
 import ru.sotber.sapr_wolf.ui.formatCalculationValue
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
 import ru.sotber.sapr_wolf.ui.theme.MonoSmallTextStyle
 import kotlin.math.abs
@@ -214,14 +212,31 @@ fun ConstructionCanvas(
     val isResultMode = processorResult != null || postprocessorResult != null
     val showLoads = !isResultMode
     val currentShowAddButtons by rememberUpdatedState(showLoads)
+    var isPointerOverInteractive by remember { mutableStateOf(false) }
 
     Canvas(
         modifier = modifier
             .fillMaxSize()
+            .pointerCursor(enabled = isPointerOverInteractive)
             .onSizeChanged { intSize ->
                 if (!viewportState.isInitialized && intSize.width > 0) {
                     viewportState.fitToView(intSize.width.toFloat(), currentTotalLength)
                 }
+            }
+            .onPointerEvent(PointerEventType.Move) { event ->
+                val position = event.changes.firstOrNull()?.position ?: return@onPointerEvent
+                isPointerOverInteractive = isOverCanvasInteractiveTarget(
+                    offset = position,
+                    canvasWidth = size.width.toFloat(),
+                    canvasHeight = size.height.toFloat(),
+                    construction = currentConstruction,
+                    totalLength = currentTotalLength,
+                    viewportState = viewportState,
+                    addButtonsEnabled = currentShowAddButtons,
+                )
+            }
+            .onPointerEvent(PointerEventType.Exit) {
+                isPointerOverInteractive = false
             }
             .onPointerEvent(PointerEventType.Scroll) { event ->
                 val change = event.changes.firstOrNull() ?: return@onPointerEvent
@@ -554,6 +569,83 @@ private fun handleCanvasTap(
     }
 
     onClearSelection()
+}
+
+private fun isOverCanvasInteractiveTarget(
+    offset: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
+    construction: Construction,
+    totalLength: Double,
+    viewportState: ViewportState,
+    addButtonsEnabled: Boolean,
+): Boolean {
+    if (canvasWidth <= 0f || canvasHeight <= 0f) return false
+
+    val centerY = canvasHeight / 2f + viewportState.panY
+    val scale = viewportState.scaleFactor
+    val addButtonHitRadius = (CanvasDefaults.BASE_ADD_BUTTON_RADIUS * scale)
+        .coerceAtLeast(CanvasDefaults.MIN_ADD_BUTTON_HIT_RADIUS)
+
+    if (construction.rods.isEmpty()) {
+        val centerButton = Offset(canvasWidth / 2f + viewportState.panX, centerY)
+        return (offset - centerButton).getDistance() <= addButtonHitRadius
+    }
+
+    val totalNodes = construction.nodeCount
+    val nodeHitHalfSize = (CanvasDefaults.BASE_NODE_SIZE * scale / 2f)
+        .coerceAtLeast(CanvasDefaults.MIN_NODE_HIT_HALF_SIZE)
+
+    for (nodeIdx in 0 until totalNodes) {
+        val nodeX = viewportState.worldToScreenX(
+            worldX = construction.displayNodePositionOnAxis(nodeIdx),
+            canvasWidth = canvasWidth,
+            totalConstructionLength = totalLength,
+        )
+        if (abs(offset.x - nodeX) <= nodeHitHalfSize && abs(offset.y - centerY) <= nodeHitHalfSize) {
+            return true
+        }
+    }
+
+    if (addButtonsEnabled) {
+        val leftButtonCenter = Offset(
+            x = leftAddButtonCenterX(construction, viewportState, canvasWidth, totalLength, scale),
+            y = centerY,
+        )
+        if ((offset - leftButtonCenter).getDistance() <= addButtonHitRadius) {
+            return true
+        }
+
+        val rightButtonCenter = Offset(
+            x = rightAddButtonCenterX(construction, viewportState, canvasWidth, totalLength, scale),
+            y = centerY,
+        )
+        if ((offset - rightButtonCenter).getDistance() <= addButtonHitRadius) {
+            return true
+        }
+    }
+
+    for (rodIdx in construction.rods.indices) {
+        val rod = construction.rods[rodIdx]
+        val xLeft = viewportState.worldToScreenX(
+            worldX = construction.displayNodePositionOnAxis(rodIdx),
+            canvasWidth = canvasWidth,
+            totalConstructionLength = totalLength,
+        )
+        val xRight = viewportState.worldToScreenX(
+            worldX = construction.displayNodePositionOnAxis(rodIdx + 1),
+            canvasWidth = canvasWidth,
+            totalConstructionLength = totalLength,
+        )
+        val hitHalfHeight = rodScreenHeight(rod, scale)
+            .coerceAtLeast(CanvasDefaults.MIN_ROD_HIT_HEIGHT) / 2f
+
+        if (offset.x in xLeft..xRight && abs(offset.y - centerY) <= hitHalfHeight) {
+            return true
+        }
+    }
+
+    return false
 }
 
 internal fun displayRodLength(rod: Rod): Double {

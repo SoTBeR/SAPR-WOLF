@@ -1,20 +1,9 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,19 +25,9 @@ import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.nodeCount
 import ru.sotber.sapr_wolf.ui.CalculationState
 import ru.sotber.sapr_wolf.ui.formatTableValue
-import ru.sotber.sapr_wolf.ui.theme.CapsuleShape
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
-import ru.sotber.sapr_wolf.ui.theme.MaterialThemeSpacing
-import ru.sotber.sapr_wolf.ui.theme.MonoTextStyle
-import ru.sotber.sapr_wolf.ui.theme.Shapes
-import ru.sotber.sapr_wolf.ui.theme.labelMediumBold
-import sapr_wolf.shared.generated.resources.Res
-import sapr_wolf.shared.generated.resources.processor_nodes_table_title
-import sapr_wolf.shared.generated.resources.processor_support_badge
-import sapr_wolf.shared.generated.resources.processor_table_col_displacement
-import sapr_wolf.shared.generated.resources.processor_table_col_force
-import sapr_wolf.shared.generated.resources.processor_table_col_node
-import sapr_wolf.shared.generated.resources.processor_table_col_reaction
+import ru.sotber.sapr_wolf.ui.modifiers.pointerCursor
+import ru.sotber.sapr_wolf.ui.theme.*
+import sapr_wolf.shared.generated.resources.*
 import kotlin.math.abs
 
 private object ProcessorNodesTableDefaults {
@@ -237,6 +216,7 @@ private fun ProcessorNodeResultRow(
             .clip(Shapes.small)
             .background(rowBackgroundColor)
             .border(width = 1.dp, color = rowBorderColor, shape = Shapes.small)
+            .pointerCursor()
             .hoverable(interactionSource)
             .clickable(
                 interactionSource = interactionSource,
