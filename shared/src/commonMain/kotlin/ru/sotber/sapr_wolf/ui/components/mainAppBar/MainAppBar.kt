@@ -1,16 +1,25 @@
 package ru.sotber.sapr_wolf.ui.components.mainAppBar
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +46,7 @@ fun MainAppBar(
     modifier: Modifier = Modifier,
     construction: Construction = Construction(),
     projectName: String? = null,
+    hasUnsavedChanges: Boolean = false,
     selectedStage: AppStage = AppStage.Preprocessor,
     isProcessorEnabled: Boolean = true,
     isPostprocessorEnabled: Boolean = false,
@@ -184,19 +194,39 @@ fun MainAppBar(
                     .align(Alignment.BottomEnd)
                     .padding(MaterialThemeSpacing.floatingMargin),
             ) {
-                Text(
-                    text = projectName,
-                    style = MaterialTheme.typography.labelMediumBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .widthIn(max = maxNameWidth)
                         .padding(
                             horizontal = MaterialThemeSpacing.mediumSmall,
                             vertical = MaterialThemeSpacing.small,
                         ),
-                )
+                ) {
+                    AnimatedVisibility(
+                        visible = hasUnsavedChanges,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally(),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .padding(end = MaterialThemeSpacing.small)
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                        )
+                    }
+
+                    Text(
+                        text = projectName,
+                        style = MaterialTheme.typography.labelMediumBold.copy(
+                            fontStyle = if (hasUnsavedChanges) FontStyle.Italic else FontStyle.Normal,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
 

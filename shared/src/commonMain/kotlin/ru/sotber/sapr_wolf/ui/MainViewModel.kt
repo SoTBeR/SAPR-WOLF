@@ -11,6 +11,7 @@ import org.jetbrains.compose.resources.getString
 import ru.sotber.sapr_wolf.model.AppStage
 import ru.sotber.sapr_wolf.model.Construction
 import ru.sotber.sapr_wolf.model.Rod
+import ru.sotber.sapr_wolf.model.SavedCalculation
 import ru.sotber.sapr_wolf.model.nodeCount
 import ru.sotber.sapr_wolf.postprocessor.ReportFormat
 import ru.sotber.sapr_wolf.postprocessor.analyzeStrength
@@ -26,9 +27,16 @@ import sapr_wolf.shared.generated.resources.dialog_default_project_filename
 class MainViewModel(
     private val fileGateway: ProjectFileGateway = ProjectFileDialog,
 ) : ViewModel() {
+    private data class SavedProjectSnapshot(
+        val construction: Construction,
+        val calculation: SavedCalculation?,
+    )
+
     private val undoStack = ArrayDeque<Construction>()
     private val redoStack = ArrayDeque<Construction>()
     private var currentProjectFile: ProjectFileHandle? = null
+    private var pendingLegacyConversion: OpenedProjectFile? = null
+    private var savedSnapshot: SavedProjectSnapshot? = null
 
     private val _uiState = MutableStateFlow(createInitialState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
@@ -406,6 +414,7 @@ class MainViewModel(
 
     fun startNewProject(defaultConstruction: Boolean = false) {
         currentProjectFile = null
+        savedSnapshot = null
 
         val targetConstruction = if (defaultConstruction) {
             Construction.defaultDemoConstruction()
@@ -417,6 +426,7 @@ class MainViewModel(
             _uiState.update {
                 it.copy(
                     projectName = null,
+                    hasUnsavedChanges = false,
                     selectedRodIndex = null,
                     selectedNodeIndex = null,
                 )
@@ -453,22 +463,117 @@ class MainViewModel(
         }
     }
 
+    fun confirmLegacyJsonConversion() {
+        val pending = pendingLegacyConversion ?: return
+        if (_uiState.value.isFileDialogOpen) return
+        viewModelScope.launch {
+            executeConfirmLegacyJsonConversion(pending)
+        }
+    }
+
+    fun cancelLegacyJsonConversion() {
+        pendingLegacyConversion = null
+        _uiState.update { current ->
+            if (current.fileDialogAlert is FileDialogAlert.ConfirmLegacyJsonConversion) {
+                current.copy(fileDialogAlert = null)
+            } else {
+                current
+            }
+        }
+    }
+
     internal suspend fun executeOpenProjectFromFile() {
         withFileDialogLock {
-            val result = fileGateway.pickJsonFileToOpen() ?: return
+            val result = fileGateway.pickProjectFileToOpen() ?: return
 
             result
                 .onSuccess { openedFile ->
-                    loadProjectFromJson(
-                        jsonString = openedFile.content,
-                        projectName = openedFile.projectName,
-                        projectFile = openedFile.file,
-                    )
+                    if (openedFile.isLegacyJson) {
+                        val parseCheck = runCatching {
+                            ProjectFileCodec.decodeProject(openedFile.content)
+                        }
+                        parseCheck
+                            .onSuccess {
+                                pendingLegacyConversion = openedFile
+                                _uiState.update {
+                                    it.copy(
+                                        fileDialogAlert = FileDialogAlert.ConfirmLegacyJsonConversion(
+                                            projectName = openedFile.projectName,
+                                        ),
+                                    )
+                                }
+                            }
+                            .onFailure { error ->
+                                _uiState.update {
+                                    it.copy(
+                                        fileDialogAlert = FileDialogAlert.LoadError(details = error.message),
+                                    )
+                                }
+                            }
+                    } else {
+                        loadProjectFromJson(
+                            jsonString = openedFile.content,
+                            projectName = openedFile.projectName,
+                            projectFile = openedFile.file,
+                        )
+                    }
                 }
                 .onFailure { error ->
                     _uiState.update {
                         it.copy(
                             fileDialogAlert = FileDialogAlert.LoadError(details = error.message),
+                        )
+                    }
+                }
+        }
+    }
+
+    internal suspend fun executeConfirmLegacyJsonConversion(
+        pending: OpenedProjectFile? = pendingLegacyConversion,
+    ) {
+        val targetPending = pending ?: return
+        pendingLegacyConversion = null
+        _uiState.update { current ->
+            if (current.fileDialogAlert is FileDialogAlert.ConfirmLegacyJsonConversion) {
+                current.copy(fileDialogAlert = null)
+            } else {
+                current
+            }
+        }
+
+        withFileDialogLock {
+            val decoded = runCatching {
+                ProjectFileCodec.decodeProject(targetPending.content)
+            }.getOrElse { error ->
+                _uiState.update {
+                    it.copy(fileDialogAlert = FileDialogAlert.LoadError(details = error.message))
+                }
+                return
+            }
+
+            val sprwContent = ProjectFileCodec.encode(
+                construction = decoded.construction,
+                calculation = decoded.calculation,
+            )
+
+            val saveResult = fileGateway.saveProjectFileAs(
+                defaultFileName = targetPending.projectName,
+                content = sprwContent,
+            ) ?: return
+
+            saveResult
+                .onSuccess { savedFile ->
+                    applyDecodedProject(
+                        decoded = decoded,
+                        projectName = savedFile.projectName,
+                        projectFile = savedFile.file,
+                        markAsSaved = true,
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
                         )
                     }
                 }
@@ -484,12 +589,24 @@ class MainViewModel(
             return
         }
 
-        val jsonContent = exportProjectToJson()
+        val snapshotToSave = currentSnapshot()
+        val projectContent = exportProjectToJson()
 
-        fileGateway.overwriteJsonFile(
+        fileGateway.overwriteProjectFile(
             file = activeFile,
-            content = jsonContent,
-        ).onFailure { error ->
+            content = projectContent,
+        ).onSuccess {
+            savedSnapshot = snapshotToSave
+            _uiState.update { state ->
+                state.copy(
+                    hasUnsavedChanges = computeHasUnsavedChanges(
+                        projectName = state.projectName,
+                        construction = state.construction,
+                        calculationState = state.calculationState,
+                    ),
+                )
+            }
+        }.onFailure { error ->
             _uiState.update {
                 it.copy(
                     fileDialogAlert = FileDialogAlert.SaveError(details = error.message),
@@ -502,19 +619,28 @@ class MainViewModel(
         withFileDialogLock {
             val defaultFileName = _uiState.value.projectName
                 ?: runCatching { getString(Res.string.dialog_default_project_filename) }
-                    .getOrDefault("project.json")
-            val jsonContent = exportProjectToJson()
+                    .getOrDefault("project.sprw")
+            val snapshotToSave = currentSnapshot()
+            val projectContent = exportProjectToJson()
 
-            val result = fileGateway.saveJsonFileAs(
+            val result = fileGateway.saveProjectFileAs(
                 defaultFileName = defaultFileName,
-                content = jsonContent,
+                content = projectContent,
             ) ?: return
 
             result
                 .onSuccess { savedFile ->
                     currentProjectFile = savedFile.file
-                    _uiState.update {
-                        it.copy(projectName = savedFile.projectName)
+                    savedSnapshot = snapshotToSave
+                    _uiState.update { state ->
+                        state.copy(
+                            projectName = savedFile.projectName,
+                            hasUnsavedChanges = computeHasUnsavedChanges(
+                                projectName = savedFile.projectName,
+                                construction = state.construction,
+                                calculationState = state.calculationState,
+                            ),
+                        )
                     }
                 }
                 .onFailure { error ->
@@ -538,8 +664,12 @@ class MainViewModel(
     }
 
     fun dismissFileDialogAlert() {
-        _uiState.update {
-            it.copy(fileDialogAlert = null)
+        _uiState.update { current ->
+            if (current.fileDialogAlert is FileDialogAlert.ConfirmLegacyJsonConversion) {
+                current
+            } else {
+                current.copy(fileDialogAlert = null)
+            }
         }
     }
 
@@ -558,26 +688,13 @@ class MainViewModel(
         projectName: String? = null,
         projectFile: ProjectFileHandle? = null,
     ): Result<NormalizationResult> = runCatching {
-        val normalizationResult = ProjectFileCodec.decodeAndNormalize(jsonString)
-
-        undoStack.clear()
-        redoStack.clear()
-        currentProjectFile = projectFile
-
-        applyConstructionState(
-            construction = normalizationResult.construction,
+        val decoded = ProjectFileCodec.decodeProject(jsonString)
+        applyDecodedProject(
+            decoded = decoded,
             projectName = projectName,
-            selectedRodIndex = null,
-            selectedNodeIndex = null,
-            fileDialogAlert = if (normalizationResult.wasModified) {
-                FileDialogAlert.NormalizedOnLoad(normalizationResult.changes)
-            } else {
-                null
-            },
-            incrementLoadVersion = true,
+            projectFile = projectFile,
         )
-
-        normalizationResult
+        decoded.normalizationResult
     }.onFailure { error ->
         _uiState.update {
             it.copy(
@@ -586,8 +703,75 @@ class MainViewModel(
         }
     }
 
-    fun exportProjectToJson(): String =
-        ProjectFileCodec.encode(_uiState.value.construction)
+    private fun applyDecodedProject(
+        decoded: DecodedProject,
+        projectName: String?,
+        projectFile: ProjectFileHandle?,
+        markAsSaved: Boolean = false,
+    ) {
+        undoStack.clear()
+        redoStack.clear()
+        currentProjectFile = projectFile
+
+        val matchesSavedFile = markAsSaved ||
+            (!decoded.wasNormalized && decoded.calculationInvalidationReason == null)
+        savedSnapshot = if (matchesSavedFile && !projectName.isNullOrBlank()) {
+            SavedProjectSnapshot(
+                construction = decoded.construction,
+                calculation = decoded.calculation,
+            )
+        } else {
+            null
+        }
+
+        val alert = when {
+            decoded.calculationInvalidationReason != null -> FileDialogAlert.CalculationInvalidated(
+                reason = decoded.calculationInvalidationReason,
+                normalizationChanges = decoded.normalizationResult.changes,
+            )
+
+            decoded.wasNormalized -> FileDialogAlert.NormalizedOnLoad(
+                changes = decoded.normalizationResult.changes,
+            )
+
+            else -> null
+        }
+
+        val restoredCalculation = decoded.calculation?.let { saved ->
+            CalculationState.Success(
+                displacements = saved.displacements,
+                reactions = saved.reactions,
+                equilibriumResidual = saved.equilibriumResidual,
+                rodStrengths = saved.rodStrengths,
+            )
+        }
+
+        applyConstructionState(
+            construction = decoded.construction,
+            projectName = projectName,
+            selectedRodIndex = null,
+            selectedNodeIndex = null,
+            fileDialogAlert = alert,
+            incrementLoadVersion = true,
+            restoredCalculation = restoredCalculation,
+        )
+    }
+
+    fun exportProjectToJson(): String {
+        val current = _uiState.value
+        val savedCalculation = (current.calculationState as? CalculationState.Success)?.let { result ->
+            SavedCalculation(
+                displacements = result.displacements,
+                reactions = result.reactions,
+                equilibriumResidual = result.equilibriumResidual,
+                rodStrengths = result.rodStrengths,
+            )
+        }
+        return ProjectFileCodec.encode(
+            construction = current.construction,
+            calculation = savedCalculation,
+        )
+    }
 
     fun undo() {
         if (undoStack.isEmpty()) return
@@ -652,18 +836,25 @@ class MainViewModel(
                         0.0
                     }
 
+                    val nextCalculationState = CalculationState.Success(
+                        displacements = displacementsArray.toList(),
+                        reactions = reactions,
+                        equilibriumResidual = residual,
+                        rodStrengths = strengths,
+                    )
+
                     it.copy(
                         selectedStage = targetStage,
                         isCalculated = true,
+                        hasUnsavedChanges = computeHasUnsavedChanges(
+                            projectName = it.projectName,
+                            construction = current.construction,
+                            calculationState = nextCalculationState,
+                        ),
                         validationIssues = issues,
                         inspectedRodIndex = defaultRodIndex,
                         inspectedLocalX = defaultLocalX,
-                        calculationState = CalculationState.Success(
-                            displacements = displacementsArray.toList(),
-                            reactions = reactions,
-                            equilibriumResidual = residual,
-                            rodStrengths = strengths,
-                        ),
+                        calculationState = nextCalculationState,
                     )
                 }
             }
@@ -710,6 +901,7 @@ class MainViewModel(
         projectName: String? = _uiState.value.projectName,
         fileDialogAlert: FileDialogAlert? = _uiState.value.fileDialogAlert,
         incrementLoadVersion: Boolean = false,
+        restoredCalculation: CalculationState.Success? = null,
     ) {
         val validRodIndex = selectedRodIndex?.takeIf { it in construction.rods.indices }
         val validNodeIndex = if (construction.rods.isEmpty()) {
@@ -718,23 +910,73 @@ class MainViewModel(
             selectedNodeIndex?.takeIf { it in 0 until construction.nodeCount }
         }
         val issues = ConstructionValidator.validate(construction)
+        val hasValidRestoredCalculation = restoredCalculation != null && issues.none { it.isError }
+        val defaultInspectedRod = if (hasValidRestoredCalculation && construction.rods.isNotEmpty()) {
+            0
+        } else {
+            null
+        }
+
+        val nextCalculationState = if (hasValidRestoredCalculation) {
+            restoredCalculation
+        } else {
+            CalculationState.Idle
+        }
 
         _uiState.update {
             it.copy(
                 construction = construction,
                 projectName = projectName,
+                hasUnsavedChanges = computeHasUnsavedChanges(
+                    projectName = projectName,
+                    construction = construction,
+                    calculationState = nextCalculationState,
+                ),
                 selectedStage = AppStage.Preprocessor,
-                isCalculated = false,
+                isCalculated = hasValidRestoredCalculation,
                 selectedRodIndex = validRodIndex,
                 selectedNodeIndex = validNodeIndex,
                 validationIssues = issues,
                 canUndo = undoStack.isNotEmpty(),
                 canRedo = redoStack.isNotEmpty(),
-                calculationState = CalculationState.Idle,
+                calculationState = nextCalculationState,
+                inspectedRodIndex = if (hasValidRestoredCalculation) defaultInspectedRod else it.inspectedRodIndex,
+                inspectedLocalX = if (hasValidRestoredCalculation) 0.0 else it.inspectedLocalX,
                 fileDialogAlert = fileDialogAlert,
                 projectLoadVersion = if (incrementLoadVersion) it.projectLoadVersion + 1 else it.projectLoadVersion,
             )
         }
+    }
+
+    private fun currentSnapshot(): SavedProjectSnapshot {
+        val current = _uiState.value
+        return SavedProjectSnapshot(
+            construction = current.construction,
+            calculation = current.calculationState.toSavedCalculationOrNull(),
+        )
+    }
+
+    private fun CalculationState.toSavedCalculationOrNull(): SavedCalculation? =
+        (this as? CalculationState.Success)?.let { result ->
+            SavedCalculation(
+                displacements = result.displacements,
+                reactions = result.reactions,
+                equilibriumResidual = result.equilibriumResidual,
+                rodStrengths = result.rodStrengths,
+            )
+        }
+
+    private fun computeHasUnsavedChanges(
+        projectName: String?,
+        construction: Construction,
+        calculationState: CalculationState,
+    ): Boolean {
+        if (projectName.isNullOrBlank()) return false
+        val current = SavedProjectSnapshot(
+            construction = construction,
+            calculation = calculationState.toSavedCalculationOrNull(),
+        )
+        return savedSnapshot != current
     }
 
     private fun createInitialState(): MainUiState {

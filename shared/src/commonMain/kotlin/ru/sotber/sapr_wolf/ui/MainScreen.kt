@@ -54,6 +54,8 @@ fun MainScreen(
         onSaveProject = viewModel::saveProjectToFile,
         onSaveProjectAs = viewModel::saveProjectAsToFile,
         onDismissFileDialogAlert = viewModel::dismissFileDialogAlert,
+        onConfirmLegacyJsonConversion = viewModel::confirmLegacyJsonConversion,
+        onCancelLegacyJsonConversion = viewModel::cancelLegacyJsonConversion,
         onDismissCalculationError = viewModel::dismissCalculationError,
         onUndo = viewModel::undo,
         onRedo = viewModel::redo,
@@ -87,6 +89,8 @@ fun MainScreenContent(
     onSaveProject: () -> Unit = {},
     onSaveProjectAs: () -> Unit = {},
     onDismissFileDialogAlert: () -> Unit = {},
+    onConfirmLegacyJsonConversion: () -> Unit = {},
+    onCancelLegacyJsonConversion: () -> Unit = {},
     onDismissCalculationError: () -> Unit = {},
     onUndo: () -> Unit = {},
     onRedo: () -> Unit = {},
@@ -293,6 +297,7 @@ fun MainScreenContent(
             rowsHazeState = mainAppBarRowsHazeState,
             construction = uiState.construction,
             projectName = uiState.projectName,
+            hasUnsavedChanges = uiState.hasUnsavedChanges,
             selectedStage = uiState.selectedStage,
             isProcessorEnabled = uiState.isProcessorEnabled,
             isPostprocessorEnabled = uiState.isPostprocessorEnabled,
@@ -435,6 +440,14 @@ fun MainScreenContent(
                 alert = alert,
                 onDismiss = {
                     onDismissFileDialogAlert()
+                    focusRequester.requestFocus()
+                },
+                onConfirmLegacyJsonConversion = {
+                    onConfirmLegacyJsonConversion()
+                    focusRequester.requestFocus()
+                },
+                onCancelLegacyJsonConversion = {
+                    onCancelLegacyJsonConversion()
                     focusRequester.requestFocus()
                 },
             )

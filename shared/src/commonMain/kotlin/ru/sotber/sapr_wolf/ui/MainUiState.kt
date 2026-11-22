@@ -1,6 +1,7 @@
 package ru.sotber.sapr_wolf.ui
 
 import ru.sotber.sapr_wolf.model.*
+import ru.sotber.sapr_wolf.preprocessor.CalculationInvalidationReason
 import ru.sotber.sapr_wolf.preprocessor.NormalizationChange
 import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
 
@@ -25,6 +26,15 @@ sealed interface FileDialogAlert {
         val changes: List<NormalizationChange>,
     ) : FileDialogAlert
 
+    data class CalculationInvalidated(
+        val reason: CalculationInvalidationReason,
+        val normalizationChanges: List<NormalizationChange> = emptyList(),
+    ) : FileDialogAlert
+
+    data class ConfirmLegacyJsonConversion(
+        val projectName: String,
+    ) : FileDialogAlert
+
     data class LoadError(
         val details: String? = null,
     ) : FileDialogAlert
@@ -37,6 +47,7 @@ sealed interface FileDialogAlert {
 data class MainUiState(
     val construction: Construction = Construction.defaultDemoConstruction(),
     val projectName: String? = null,
+    val hasUnsavedChanges: Boolean = false,
     val selectedStage: AppStage = AppStage.Preprocessor,
     val isCalculated: Boolean = false,
     val selectedRodIndex: Int? = null,

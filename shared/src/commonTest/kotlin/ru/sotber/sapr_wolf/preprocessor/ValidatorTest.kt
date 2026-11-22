@@ -257,9 +257,9 @@ class ValidatorTest {
         val secondHandle = ProjectFileHandle()
 
         val fakeGateway = object : ProjectFileGateway {
-            override suspend fun pickJsonFileToOpen(): Result<OpenedProjectFile>? = null
+            override suspend fun pickProjectFileToOpen(): Result<OpenedProjectFile>? = null
 
-            override suspend fun saveJsonFileAs(
+            override suspend fun saveProjectFileAs(
                 defaultFileName: String,
                 content: String,
             ): Result<SavedProjectFile>? {
@@ -273,7 +273,7 @@ class ValidatorTest {
                 )
             }
 
-            override suspend fun overwriteJsonFile(
+            override suspend fun overwriteProjectFile(
                 file: ProjectFileHandle,
                 content: String,
             ): Result<Unit> {

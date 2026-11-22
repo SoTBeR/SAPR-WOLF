@@ -27,16 +27,27 @@
     <string name="inspector_field_node_force">Сила F</string>
     <string name="inspector_field_node_support">Опора?</string>
 
-    <string name="dialog_open_project_title">Открыть проект (.json)</string>
-    <string name="dialog_save_project_title">Сохранить проект как (.json)</string>
-    <string name="dialog_default_project_filename">project.json</string>
+    <string name="dialog_open_project_title">Открыть проект (.sprw, .json)</string>
+    <string name="dialog_save_project_title">Сохранить проект как (.sprw)</string>
+    <string name="dialog_default_project_filename">project.sprw</string>
     <string name="dialog_continue">Продолжить</string>
+    <string name="dialog_yes">Да</string>
+    <string name="dialog_no">Нет</string>
 
     <string name="dialog_normalized_title">Конструкция преобразована</string>
     <string name="dialog_normalized_header">При загрузке файла проекта были автоматически исправлены следующие ошибки:</string>
 
+    <string name="dialog_legacy_conversion_title">Конвертация файла проекта</string>
+    <string name="dialog_legacy_conversion_message">Файл «%1$s.json» использует устаревший формат. Для дальнейшей работы проект будет конвертирован и сохранён в формате SAPR-WOLF (.sprw). Конвертировать и открыть проект?</string>
+
+    <string name="dialog_calculation_invalidated_title">Сохранённые расчёты сброшены</string>
+    <string name="dialog_calculation_invalidated_tampered">Обнаружено несоответствие контрольной подписи: сохранённые расчёты или параметры конструкции были изменены вручную. Для безопасности результаты расчёта сброшены.</string>
+    <string name="dialog_calculation_invalidated_math">Сохранённые результаты расчёта не прошли математическую проверку уравнений МКЭ и прочности. Для обеспечения достоверности расчёты сброшены.</string>
+    <string name="dialog_calculation_invalidated_outdated">Сохранённые расчёты выполнены в другой версии решателя и были сброшены. Выполните расчёт заново.</string>
+    <string name="dialog_calculation_invalidated_normalized">Исходная конструкция была автоматически исправлена при загрузке, поэтому сохранённые расчёты утратили актуальность и были сброшены:</string>
+
     <string name="dialog_load_error_title">Ошибка загрузки файла проекта</string>
-    <string name="dialog_load_error_message">Не удалось прочитать или распознать файл проекта (.JSON). Проверьте корректность формата файла.</string>
+    <string name="dialog_load_error_message">Не удалось прочитать или распознать файл проекта (.sprw / .json). Проверьте корректность формата файла.</string>
 
     <string name="dialog_save_error_title">Ошибка сохранения файла проекта</string>
     <string name="dialog_save_error_message">Не удалось сохранить файл проекта на диск.</string>

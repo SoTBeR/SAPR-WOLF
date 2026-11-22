@@ -2,7 +2,6 @@ package ru.sotber.sapr_wolf.preprocessor
 
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
-import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import io.github.vinceglb.filekit.dialogs.openFileWithDefaultApplication
@@ -18,6 +17,7 @@ data class OpenedProjectFile(
     val file: ProjectFileHandle,
     val projectName: String,
     val content: String,
+    val isLegacyJson: Boolean = false,
 )
 
 data class SavedProjectFile(
@@ -26,14 +26,14 @@ data class SavedProjectFile(
 )
 
 interface ProjectFileGateway {
-    suspend fun pickJsonFileToOpen(): Result<OpenedProjectFile>?
+    suspend fun pickProjectFileToOpen(): Result<OpenedProjectFile>?
 
-    suspend fun saveJsonFileAs(
+    suspend fun saveProjectFileAs(
         defaultFileName: String,
         content: String,
     ): Result<SavedProjectFile>?
 
-    suspend fun overwriteJsonFile(
+    suspend fun overwriteProjectFile(
         file: ProjectFileHandle,
         content: String,
     ): Result<Unit>
@@ -47,13 +47,14 @@ interface ProjectFileGateway {
 }
 
 object ProjectFileDialog : ProjectFileGateway {
-    private const val JSON_EXTENSION = "json"
+    const val PROJECT_EXTENSION = "sprw"
+    const val LEGACY_JSON_EXTENSION = "json"
     private const val DEFAULT_NAME = "project"
 
-    override suspend fun pickJsonFileToOpen(): Result<OpenedProjectFile>? {
+    override suspend fun pickProjectFileToOpen(): Result<OpenedProjectFile>? {
         val selectedFile = runCatching {
             FileKit.openFilePicker(
-                type = FileKitType.File(extensions = listOf(JSON_EXTENSION)),
+                type = createProjectOpenFileType(),
                 dialogSettings = createProjectFileDialogSettings(),
             )
         }.getOrElse { error ->
@@ -61,15 +62,17 @@ object ProjectFileDialog : ProjectFileGateway {
         } ?: return null
 
         return runCatching {
+            val fileName = selectedFile.name
             OpenedProjectFile(
                 file = ProjectFileHandle(selectedFile),
-                projectName = extractProjectName(selectedFile.name),
+                projectName = extractProjectName(fileName),
                 content = selectedFile.readString(),
+                isLegacyJson = isLegacyJsonFileName(fileName),
             )
         }
     }
 
-    override suspend fun saveJsonFileAs(
+    override suspend fun saveProjectFileAs(
         defaultFileName: String,
         content: String,
     ): Result<SavedProjectFile>? {
@@ -78,7 +81,7 @@ object ProjectFileDialog : ProjectFileGateway {
         val targetFile = runCatching {
             FileKit.openFileSaver(
                 suggestedName = suggestedBaseName,
-                defaultExtension = JSON_EXTENSION,
+                defaultExtension = PROJECT_EXTENSION,
                 dialogSettings = createProjectFileDialogSettings(),
             )
         }.getOrElse { error ->
@@ -94,7 +97,7 @@ object ProjectFileDialog : ProjectFileGateway {
         }
     }
 
-    override suspend fun overwriteJsonFile(
+    override suspend fun overwriteProjectFile(
         file: ProjectFileHandle,
         content: String,
     ): Result<Unit> = runCatching {
@@ -133,12 +136,17 @@ object ProjectFileDialog : ProjectFileGateway {
         }
     }
 
+    internal fun isLegacyJsonFileName(fileName: String): Boolean =
+        fileName.trim().endsWith(".$LEGACY_JSON_EXTENSION", ignoreCase = true)
+
     internal fun extractProjectName(fileName: String): String {
         val trimmed = fileName.trim()
-        val withoutExtension = if (trimmed.endsWith(".json", ignoreCase = true)) {
-            trimmed.dropLast(5)
-        } else {
-            trimmed
+        val withoutExtension = when {
+            trimmed.endsWith(".$PROJECT_EXTENSION", ignoreCase = true) ->
+                trimmed.dropLast(PROJECT_EXTENSION.length + 1)
+            trimmed.endsWith(".$LEGACY_JSON_EXTENSION", ignoreCase = true) ->
+                trimmed.dropLast(LEGACY_JSON_EXTENSION.length + 1)
+            else -> trimmed
         }
 
         return withoutExtension.ifBlank { DEFAULT_NAME }

@@ -2,6 +2,7 @@ package ru.sotber.sapr_wolf.preprocessor
 
 import io.github.vinceglb.filekit.dialogs.FileKitDialogParent
 import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.FileKitType
 import java.awt.Window
 import java.lang.ref.WeakReference
 
@@ -20,3 +21,11 @@ internal actual fun createProjectFileDialogSettings(): FileKitDialogSettings {
         parent = ownerWindow?.let(FileKitDialogParent::awt),
     )
 }
+
+internal actual fun createProjectOpenFileType(): FileKitType =
+    FileKitType.File(
+        extensions = listOf(
+            ProjectFileDialog.PROJECT_EXTENSION,
+            ProjectFileDialog.LEGACY_JSON_EXTENSION,
+        ),
+    )
