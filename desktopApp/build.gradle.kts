@@ -22,8 +22,22 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "ru.sotber.sapr_wolf"
+            packageName = "SAPR-WOLF"
             packageVersion = "1.0.0"
+
+            includeAllModules = true
+
+            windows {
+                menuGroup = "SAPR-WOLF"
+                shortcut = true
+                iconFile.set(project.file("icons/icon.ico"))
+            }
+
+            macOS {
+                bundleID = "ru.sotber.sapr_wolf"
+                dockName = "SAPR-WOLF"
+                iconFile.set(project.file("icons/icon.icns"))
+            }
         }
 
         jvmArgs += listOf(
