@@ -134,6 +134,15 @@ class MainViewModel(
         _uiState.update { it.copy(isExportReportDialogOpen = false) }
     }
 
+    fun openHelpDialog() {
+        if (_uiState.value.isFileDialogOpen) return
+        _uiState.update { it.copy(isHelpDialogOpen = true) }
+    }
+
+    fun dismissHelpDialog() {
+        _uiState.update { it.copy(isHelpDialogOpen = false) }
+    }
+
     fun exportReport(
         format: ReportFormat,
         openAfterExport: Boolean = false,

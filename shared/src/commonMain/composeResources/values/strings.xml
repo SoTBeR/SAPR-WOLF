@@ -113,4 +113,93 @@
     <string name="dialog_export_report_txt">Текст (.txt)</string>
     <string name="dialog_export_report_open_after_export">Открыть отчёт после экспорта</string>
     <string name="dialog_export_report_cancel">Отмена</string>
+
+    <string name="dialog_help_title">Справка</string>
+    <string name="dialog_help_close">Закрыть</string>
+    <string name="dialog_help_tab_controls">Управление</string>
+    <string name="dialog_help_tab_notation">Обозначения</string>
+    <string name="dialog_help_tab_about">О программе</string>
+
+    <string name="help_section_project">Проект и файлы</string>
+    <string name="help_section_editing">Редактирование и расчёт</string>
+    <string name="help_section_interface_canvas">Интерфейс и холст</string>
+
+    <string name="help_key_new_project">Ctrl + N</string>
+    <string name="help_desc_new_project">Новый пустой проект (с Ctrl + Shift - демо-конструкция)</string>
+    <string name="help_key_open_project">Ctrl + O</string>
+    <string name="help_desc_open_project">Открыть файл проекта (.sprw, .json)</string>
+    <string name="help_key_save_project">Ctrl + S</string>
+    <string name="help_desc_save_project">Сохранить текущий проект</string>
+    <string name="help_key_save_project_as">Ctrl + Shift + S</string>
+    <string name="help_desc_save_project_as">Сохранить проект как…</string>
+    <string name="help_key_export_report">Ctrl + &quot;</string>
+    <string name="help_desc_export_report">Экспорт отчёта по результатам расчёта (.html, .txt)</string>
+
+    <string name="help_key_undo">Ctrl + Z</string>
+    <string name="help_desc_undo">Отменить последнее действие</string>
+    <string name="help_key_redo">Ctrl + Y / Ctrl + Shift + Z</string>
+    <string name="help_desc_redo">Повторить отменённое действие</string>
+    <string name="help_key_add_rod_left">Ctrl + Q</string>
+    <string name="help_desc_add_rod_left">Добавить стержень слева</string>
+    <string name="help_key_add_rod_right">Ctrl + E</string>
+    <string name="help_desc_add_rod_right">Добавить стержень справа</string>
+    <string name="help_key_delete_rod">Delete</string>
+    <string name="help_desc_delete_rod">Удалить выбранный стержень</string>
+    <string name="help_key_calculate">Ctrl + Enter</string>
+    <string name="help_desc_calculate">Выполнить прочностной расчёт</string>
+
+    <string name="help_desc_horizontal_only">(с Shift только по горизонтали)</string>
+    <string name="help_key_reset_zoom">Space</string>
+    <string name="help_desc_reset_zoom">Сбросить масштаб холста</string>
+    <string name="help_key_toggle_theme">Ctrl + T</string>
+    <string name="help_desc_toggle_theme">Переключить светлую и тёмную тему</string>
+    <string name="help_key_help">F1</string>
+    <string name="help_desc_help">Открыть окно справки</string>
+    <string name="help_key_mouse_wheel">Колесо мыши</string>
+    <string name="help_desc_mouse_wheel">Масштабирование холста</string>
+    <string name="help_key_mouse_drag">Перетаскивание ЛКМ</string>
+    <string name="help_desc_mouse_drag">Перемещение холста</string>
+    <string name="help_key_mouse_click">Клик по элементу</string>
+    <string name="help_desc_mouse_click">Выбор стержня или узла для редактирования и просмотра сечения</string>
+
+    <string name="help_section_input_params">Исходные параметры конструкции</string>
+    <string name="help_section_results_params">Результаты расчёта</string>
+
+    <string name="help_symbol_length">L</string>
+    <string name="help_desc_symbol_length">Длина стержня</string>
+    <string name="help_symbol_area">A</string>
+    <string name="help_desc_symbol_area">Площадь поперечного сечения стержня</string>
+    <string name="help_symbol_modulus">E</string>
+    <string name="help_desc_symbol_modulus">Модуль упругости (Юнга) материала стержня</string>
+    <string name="help_symbol_allowable_stress">σ ([σ])</string>
+    <string name="help_desc_symbol_allowable_stress">Допускаемое нормальное напряжение материала</string>
+    <string name="help_symbol_distributed_load">q</string>
+    <string name="help_desc_symbol_distributed_load">Продольная распределённая нагрузка на стержень</string>
+    <string name="help_symbol_node_force">F</string>
+    <string name="help_desc_symbol_node_force">Сосредоточенная продольная сила в узле</string>
+
+    <string name="help_symbol_displacement">Δ</string>
+    <string name="help_desc_symbol_displacement">Продольное перемещение узла</string>
+    <string name="help_symbol_reaction">R</string>
+    <string name="help_desc_symbol_reaction">Реакция опоры в закреплённом узле</string>
+    <string name="help_symbol_local_x">x</string>
+    <string name="help_desc_symbol_local_x">Локальная координата сечения вдоль стержня (x ∈ [0, L])</string>
+    <string name="help_symbol_axial_force">Nx</string>
+    <string name="help_desc_symbol_axial_force">Продольная (осевая) сила в сечении стержня</string>
+    <string name="help_symbol_normal_stress">σx</string>
+    <string name="help_desc_symbol_normal_stress">Нормальное напряжение в сечении (σx = Nx / A)</string>
+    <string name="help_symbol_section_displacement">Ux</string>
+    <string name="help_desc_symbol_section_displacement">Продольное перемещение в сечении стержня</string>
+    <string name="help_symbol_max_stress">σmax</string>
+    <string name="help_desc_symbol_max_stress">Максимальное по модулю нормальное напряжение в стержне</string>
+    <string name="help_symbol_safety_factor">n</string>
+    <string name="help_desc_symbol_safety_factor">Коэффициент запаса прочности (n = [σ] / σmax; прочность обеспечена при n ≥ 1)</string>
+
+    <string name="help_about_description">Система автоматизированного проектирования и прочностного расчёта одномерных стержневых конструкций методом конечных элементов (МКЭ).</string>
+    <string name="help_about_version_label">Версия</string>
+    <string name="help_about_version_value">1.0.0</string>
+    <string name="help_about_author_label">Автор</string>
+    <string name="help_about_author_value">SoTBeR</string>
+    <string name="help_about_formats_label">Форматы файлов</string>
+    <string name="help_about_formats_value">Проекты: .sprw, .json | Отчёты: .html, .txt</string>
 </resources>

@@ -58,6 +58,7 @@ data class MainUiState(
     val calculationState: CalculationState = CalculationState.Idle,
     val isFileDialogOpen: Boolean = false,
     val isExportReportDialogOpen: Boolean = false,
+    val isHelpDialogOpen: Boolean = false,
     val fileDialogAlert: FileDialogAlert? = null,
     val projectLoadVersion: Int = 0,
     val epureDisplayMode: EpureDisplayMode = EpureDisplayMode.All,

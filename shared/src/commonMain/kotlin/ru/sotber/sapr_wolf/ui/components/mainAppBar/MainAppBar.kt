@@ -19,7 +19,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,7 +82,7 @@ fun MainAppBar(
     onResetScale: () -> Unit = {},
     onToggleTheme: () -> Unit = {},
     onExportReport: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
 ) {
     val isDarkTheme = MaterialThemeExtraColors.isDark
     val density = LocalDensity.current
@@ -219,9 +218,7 @@ fun MainAppBar(
 
                     Text(
                         text = projectName,
-                        style = MaterialTheme.typography.labelMediumBold.copy(
-                            fontStyle = if (hasUnsavedChanges) FontStyle.Italic else FontStyle.Normal,
-                        ),
+                        style = MaterialTheme.typography.labelMediumBold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -434,19 +431,21 @@ fun MainAppBar(
                 MainAppBarRowDivider()
 
                 MainAppBarIconButton(
-                    iconRes = if (isDarkTheme) Res.drawable.ic_dark_mode else Res.drawable.ic_light_mode,
-                    onClick = onToggleTheme,
-                )
-
-                MainAppBarIconButton(
                     iconRes = Res.drawable.ic_export_report,
                     enabled = isPostprocessorEnabled,
                     onClick = onExportReport,
                 )
 
+                MainAppBarRowDivider()
+
+                MainAppBarIconButton(
+                    iconRes = if (isDarkTheme) Res.drawable.ic_dark_mode else Res.drawable.ic_light_mode,
+                    onClick = onToggleTheme,
+                )
+
                 MainAppBarIconButton(
                     iconRes = Res.drawable.ic_info,
-                    onClick = onOpenSettings,
+                    onClick = onOpenHelp,
                 )
             }
 

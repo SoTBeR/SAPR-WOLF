@@ -25,6 +25,7 @@ import ru.sotber.sapr_wolf.ui.components.CalculationErrorDialog
 import ru.sotber.sapr_wolf.ui.components.ConstructionCanvas
 import ru.sotber.sapr_wolf.ui.components.EpureDisplayMode
 import ru.sotber.sapr_wolf.ui.components.ExportReportDialog
+import ru.sotber.sapr_wolf.ui.components.HelpDialog
 import ru.sotber.sapr_wolf.ui.components.mainAppBar.MainAppBar
 import ru.sotber.sapr_wolf.ui.components.ProjectFileAlertDialog
 import ru.sotber.sapr_wolf.ui.theme.MaterialThemeExtraColors
@@ -67,6 +68,8 @@ fun MainScreen(
         onExportReport = viewModel::openExportReportDialog,
         onConfirmExportReport = viewModel::exportReport,
         onDismissExportReportDialog = viewModel::dismissExportReportDialog,
+        onOpenHelp = viewModel::openHelpDialog,
+        onDismissHelpDialog = viewModel::dismissHelpDialog,
     )
 }
 
@@ -102,7 +105,8 @@ fun MainScreenContent(
     onExportReport: () -> Unit = {},
     onConfirmExportReport: (ReportFormat, Boolean) -> Unit = { _, _ -> },
     onDismissExportReportDialog: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
+    onOpenHelp: () -> Unit = {},
+    onDismissHelpDialog: () -> Unit = {},
 ) {
     val viewportState = remember { ViewportState() }
     val focusRequester = remember { FocusRequester() }
@@ -243,6 +247,24 @@ fun MainScreenContent(
             .onPreviewKeyEvent { keyEvent ->
                 if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Enter && keyEvent.isCtrlPressed) {
                     onCalculate()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Apostrophe && (keyEvent.isCtrlPressed || keyEvent.isMetaPressed)) {
+                    onExportReport()
+
+                    true
+                } else {
+                    false
+                }
+            }
+            .onPreviewKeyEvent { keyEvent ->
+                if (keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.F1) {
+                    onOpenHelp()
 
                     true
                 } else {
@@ -392,7 +414,10 @@ fun MainScreenContent(
                 focusRequester.requestFocus()
                 onExportReport()
             },
-            onOpenSettings = onOpenSettings,
+            onOpenHelp = {
+                focusRequester.requestFocus()
+                onOpenHelp()
+            },
         )
 
         if (uiState.isFileDialogOpen) {
@@ -418,6 +443,15 @@ fun MainScreenContent(
                 },
                 onDismiss = {
                     onDismissExportReportDialog()
+                    focusRequester.requestFocus()
+                },
+            )
+        }
+
+        if (uiState.isHelpDialogOpen) {
+            HelpDialog(
+                onDismiss = {
+                    onDismissHelpDialog()
                     focusRequester.requestFocus()
                 },
             )
