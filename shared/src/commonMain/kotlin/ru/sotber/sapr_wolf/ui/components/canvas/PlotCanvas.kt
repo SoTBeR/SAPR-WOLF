@@ -32,6 +32,7 @@ import kotlin.math.min
 
 private const val PLOT_SAMPLES = 40
 private const val PLOT_ZERO_EPS = 1e-9
+private const val PLOT_RELATIVE_EPS = 1e-12
 
 @Composable
 fun PlotCanvas(
@@ -68,20 +69,26 @@ fun PlotCanvas(
 
     val rawMin = samples.minOf { it.second }
     val rawMax = samples.maxOf { it.second }
-    val yMin = min(0.0, rawMin)
-    val yMax = max(0.0, rawMax)
-    val span = yMax - yMin
-    val paddedMin: Double
-    val paddedMax: Double
-    if (span <= PLOT_ZERO_EPS) {
-        val pad = max(abs(yMax) * 0.25, 1.0)
-        paddedMin = yMin - pad
-        paddedMax = yMax + pad
-    } else {
-        val pad = span * 0.14
-        paddedMin = yMin - pad
-        paddedMax = yMax + pad
+    val valueScale = max(1.0, max(abs(rawMin), abs(rawMax)))
+    val isConstantCurve = (rawMax - rawMin) <= PLOT_RELATIVE_EPS * valueScale
+    val isZeroCurve = isConstantCurve && abs(rawMax) <= PLOT_ZERO_EPS
+    val axisMin: Double
+    val axisMax: Double
+    when {
+        isZeroCurve -> {
+            axisMin = -1.0
+            axisMax = 1.0
+        }
+        isConstantCurve -> {
+            axisMin = min(0.0, rawMin)
+            axisMax = max(0.0, rawMax)
+        }
+        else -> {
+            axisMin = rawMin
+            axisMax = rawMax
+        }
     }
+    val hasZeroInRange = axisMin <= PLOT_ZERO_EPS && axisMax >= -PLOT_ZERO_EPS
 
     val lineColor = when (component) {
         EpureComponent.AxialForce -> extraColors.tensionLine
@@ -121,26 +128,50 @@ fun PlotCanvas(
                 .fillMaxWidth()
                 .height(chartHeight),
         ) {
-            val leftPad = 42f
+            val topPad = 10f
+            val bottomPad = 22f
             val rightPad = 10f
-            val topPad = 8f
-            val bottomPad = 20f
+
+            val plotTop = topPad
+            val plotBottom = (size.height - bottomPad).coerceAtLeast(plotTop + 10f)
+            val plotHeight = plotBottom - plotTop
+
+            fun mapY(value: Double): Float {
+                val frac = ((value - axisMin) / (axisMax - axisMin)).coerceIn(0.0, 1.0)
+                return plotBottom - (frac * plotHeight).toFloat()
+            }
+
+            val zeroY = mapY(0.0)
+
+            val yTickLayouts = buildList {
+                if (isZeroCurve) {
+                    val zeroLayout = textMeasurer.measure(formatCalculationValue(0.0), labelStyle)
+                    add(zeroLayout to zeroY)
+                } else {
+                    val maxLayout = textMeasurer.measure(formatCalculationValue(axisMax), labelStyle)
+                    val minLayout = textMeasurer.measure(formatCalculationValue(axisMin), labelStyle)
+                    add(maxLayout to plotTop)
+                    if (axisMin < -PLOT_ZERO_EPS && axisMax > PLOT_ZERO_EPS) {
+                        val zeroLayout = textMeasurer.measure(formatCalculationValue(0.0), labelStyle)
+                        val minClearance = zeroLayout.size.height + 2f
+                        if (zeroY - plotTop >= minClearance && plotBottom - zeroY >= minClearance) {
+                            add(zeroLayout to zeroY)
+                        }
+                    }
+                    add(minLayout to plotBottom)
+                }
+            }
+
+            val maxTickWidth = yTickLayouts.maxOfOrNull { it.first.size.width.toFloat() } ?: 0f
+            val leftPad = max(42f, maxTickWidth + 6f)
 
             val plotLeft = leftPad
             val plotRight = (size.width - rightPad).coerceAtLeast(plotLeft + 10f)
-            val plotTop = topPad
-            val plotBottom = (size.height - bottomPad).coerceAtLeast(plotTop + 10f)
             val plotWidth = plotRight - plotLeft
-            val plotHeight = plotBottom - plotTop
 
             fun mapX(localX: Double): Float {
                 val frac = if (rod.length > PLOT_ZERO_EPS) (localX / rod.length).coerceIn(0.0, 1.0) else 0.0
                 return plotLeft + (frac * plotWidth).toFloat()
-            }
-
-            fun mapY(value: Double): Float {
-                val frac = ((value - paddedMin) / (paddedMax - paddedMin)).coerceIn(0.0, 1.0)
-                return plotBottom - (frac * plotHeight).toFloat()
             }
 
             val gridDash = PathEffect.dashPathEffect(floatArrayOf(3f, 3f), 0f)
@@ -177,13 +208,14 @@ fun PlotCanvas(
                 strokeWidth = 1.2f,
             )
 
-            val zeroY = mapY(0.0)
-            drawLine(
-                color = axisColor.copy(alpha = 0.7f),
-                start = Offset(plotLeft, zeroY),
-                end = Offset(plotRight, zeroY),
-                strokeWidth = 1f,
-            )
+            if (hasZeroInRange) {
+                drawLine(
+                    color = axisColor.copy(alpha = 0.7f),
+                    start = Offset(plotLeft, zeroY),
+                    end = Offset(plotRight, zeroY),
+                    strokeWidth = 1f,
+                )
+            }
 
             val fillPath = Path().apply {
                 moveTo(mapX(samples.first().first), zeroY)
@@ -226,13 +258,7 @@ fun PlotCanvas(
                 )
             }
 
-            val yTicks = listOf(
-                paddedMax to plotTop,
-                0.0 to zeroY,
-                paddedMin to plotBottom,
-            )
-            for ((tickVal, tickY) in yTicks) {
-                val layout = textMeasurer.measure(formatCalculationValue(tickVal), labelStyle)
+            for ((layout, tickY) in yTickLayouts) {
                 drawText(
                     textLayoutResult = layout,
                     topLeft = Offset(
@@ -257,7 +283,7 @@ fun PlotCanvas(
                 }
                 drawText(
                     textLayoutResult = layout,
-                    topLeft = Offset(x = tx, y = plotBottom + 3f),
+                    topLeft = Offset(x = tx, y = plotBottom + 4f),
                 )
             }
         }

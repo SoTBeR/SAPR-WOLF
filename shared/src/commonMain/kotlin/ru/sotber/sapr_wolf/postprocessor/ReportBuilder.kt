@@ -47,7 +47,7 @@ fun buildTextReport(
     )
     sb.appendLine()
 
-    sb.appendLine("1. ИСХОДНЫЕ ДАННЫЕ — СТЕРЖНИ")
+    sb.appendLine("1. ИСХОДНЫЕ ДАННЫЕ - СТЕРЖНИ")
     sb.appendLine("--------------------------------------------------------------------------------")
     sb.appendLine(formatRow("Стержень", "L", "A", "E", "[σ]", "q"))
     sb.appendLine("--------------------------------------------------------------------------------")
@@ -80,7 +80,7 @@ fun buildTextReport(
                 if (isFixed) "да" else "нет",
                 formatReportNumber(force),
                 formatReportNumber(displacement),
-                reaction?.let(::formatReportNumber) ?: "—",
+                reaction?.let(::formatReportNumber) ?: "-",
                 "",
             )
         )
@@ -138,14 +138,14 @@ fun buildTextReport(
 
     sb.appendLine("5. СВОДКА")
     sb.appendLine("--------------------------------------------------------------------------------")
-    val mostLoadedText = summary.mostLoadedRodIndex?.let { "стержень ${it + 1} (n = ${formatReportNumber(summary.minSafetyFactor)})" } ?: "—"
+    val mostLoadedText = summary.mostLoadedRodIndex?.let { "стержень ${it + 1} (n = ${formatReportNumber(summary.minSafetyFactor)})" } ?: "-"
     sb.appendLine("Самый нагруженный стержень: $mostLoadedText")
     sb.appendLine("Макс. |Nx|:                 ${formatReportNumber(summary.maxAbsAxialForce)}")
     sb.appendLine("Макс. |σx|:                 ${formatReportNumber(summary.maxAbsNormalStress)}")
     sb.appendLine("Макс. |Ux|:                 ${formatReportNumber(summary.maxAbsDisplacement)}")
     sb.appendLine(
         "Условие прочности:          " + if (summary.overloadedRodIndices.isEmpty()) {
-            "выполнено для всех стержней"
+            "выполнено"
         } else {
             "нарушено в стержнях: ${summary.overloadedRodIndices.joinToString(", ") { "${it + 1}" }}"
         }
@@ -176,7 +176,7 @@ fun buildHtmlReport(
     sb.appendLine("<html lang=\"ru\">")
     sb.appendLine("<head>")
     sb.appendLine("  <meta charset=\"UTF-8\">")
-    sb.appendLine("  <title>Отчёт SAPR-WOLF — $resolvedName</title>")
+    sb.appendLine("  <title>Отчёт SAPR-WOLF - $resolvedName</title>")
     sb.appendLine("  <style>")
     sb.appendLine("    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111113; background: #f8f8fa; margin: 32px; line-height: 1.5; }")
     sb.appendLine("    .container { max-width: 960px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 28px 32px; }")
@@ -193,6 +193,11 @@ fun buildHtmlReport(
     sb.appendLine("    .card { background: #f8f8fa; border: 1px solid #e5e5ea; border-radius: 8px; padding: 10px 14px; font-size: 13px; }")
     sb.appendLine("    .card-label { color: #6e6e73; font-size: 12px; }")
     sb.appendLine("    .card-value { font-size: 15px; font-weight: 600; margin-top: 2px; }")
+    sb.appendLine("    .diagram-block { margin: 12px 0 8px 0; border: 1px solid #e5e5ea; border-radius: 8px; overflow: hidden; background: #f8f8fa; break-inside: avoid; }")
+    sb.appendLine("    .diagram-block svg { display: block; width: 100%; height: auto; }")
+    sb.appendLine("    .svg-mono { font-family: ui-monospace, 'SFMono-Regular', Menlo, Monaco, Consolas, monospace; font-size: 12px; font-weight: 500; }")
+    sb.appendLine("    .svg-epure-title { font-weight: 600; }")
+    sb.appendLine("    @media print { body { background: #ffffff; margin: 0; } .container { border: none; padding: 12px; max-width: none; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }")
     sb.appendLine("  </style>")
     sb.appendLine("</head>")
     sb.appendLine("<body>")
@@ -200,7 +205,20 @@ fun buildHtmlReport(
     sb.appendLine("  <h1>Отчёт по расчёту стержневой системы</h1>")
     sb.appendLine("  <div class=\"meta\">Проект: <strong>$resolvedName</strong> · Стержней: ${construction.rods.size} · Узлов: ${construction.nodeCount} · Опоры: $supportsText</div>")
 
-    sb.appendLine("  <h2>1. Исходные данные — стержни</h2>")
+    val overloadedRodIndices = summary.overloadedRodIndices.toSet()
+    val diagramSvg = buildConstructionAndEpuresSvg(
+        construction = construction,
+        displacements = displacements,
+        overloadedRodIndices = overloadedRodIndices,
+    )
+    if (diagramSvg.isNotEmpty()) {
+        sb.appendLine("  <h2>1. Конструкция, расчётная схема и эпюры</h2>")
+        sb.appendLine("  <div class=\"diagram-block\">")
+        sb.append(diagramSvg)
+        sb.appendLine("  </div>")
+    }
+
+    sb.appendLine("  <h2>2. Исходные данные - стержни</h2>")
     sb.appendLine("  <table>")
     sb.appendLine("    <thead><tr><th>Стержень</th><th>L</th><th>A</th><th>E</th><th>[σ]</th><th>q</th></tr></thead>")
     sb.appendLine("    <tbody>")
@@ -217,7 +235,7 @@ fun buildHtmlReport(
     sb.appendLine("    </tbody>")
     sb.appendLine("  </table>")
 
-    sb.appendLine("  <h2>2. Результаты по узлам</h2>")
+    sb.appendLine("  <h2>3. Результаты по узлам</h2>")
     sb.appendLine("  <table>")
     sb.appendLine("    <thead><tr><th>Узел</th><th>Опора</th><th>F</th><th>Δ</th><th>R</th></tr></thead>")
     sb.appendLine("    <tbody>")
@@ -231,14 +249,14 @@ fun buildHtmlReport(
                 "<td>${if (isFixed) "да" else "нет"}</td>" +
                 "<td>${formatReportNumber(force)}</td>" +
                 "<td>${formatReportNumber(displacement)}</td>" +
-                "<td>${reaction?.let(::formatReportNumber) ?: "—"}</td></tr>"
+                "<td>${reaction?.let(::formatReportNumber) ?: "-"}</td></tr>"
         )
     }
     sb.appendLine("    </tbody>")
     sb.appendLine("  </table>")
     sb.appendLine("  <div class=\"meta\">Невязка статического равновесия ΣR + ΣF + Σ(q·L) = <strong>${formatReportNumber(equilibriumResidual)}</strong></div>")
 
-    sb.appendLine("  <h2>3. Напряжённо-деформированное состояние стержней</h2>")
+    sb.appendLine("  <h2>4. Напряжённо-деформированное состояние стержней</h2>")
     sb.appendLine("  <table>")
     sb.appendLine("    <thead><tr><th>Стержень</th><th>x</th><th>N<sub>x</sub></th><th>σ<sub>x</sub></th><th>U<sub>x</sub></th></tr></thead>")
     sb.appendLine("    <tbody>")
@@ -261,7 +279,7 @@ fun buildHtmlReport(
     sb.appendLine("    </tbody>")
     sb.appendLine("  </table>")
 
-    sb.appendLine("  <h2>4. Проверка прочности</h2>")
+    sb.appendLine("  <h2>5. Проверка прочности</h2>")
     sb.appendLine("  <table>")
     sb.appendLine("    <thead><tr><th>Стержень</th><th>σ<sub>max</sub></th><th>[σ]</th><th>Запас n<sub>p</sub></th><th>Статус</th></tr></thead>")
     sb.appendLine("    <tbody>")
@@ -280,12 +298,12 @@ fun buildHtmlReport(
     sb.appendLine("    </tbody>")
     sb.appendLine("  </table>")
 
-    sb.appendLine("  <h2>5. Сводка</h2>")
+    sb.appendLine("  <h2>6. Сводка</h2>")
     val mostLoadedText = summary.mostLoadedRodIndex?.let {
         "Стержень ${it + 1} (n = ${formatReportNumber(summary.minSafetyFactor)})"
-    } ?: "—"
+    } ?: "-"
     val strengthSummaryText = if (summary.overloadedRodIndices.isEmpty()) {
-        "Выполнено для всех стержней"
+        "Выполнено"
     } else {
         "Перегруз: стержни ${summary.overloadedRodIndices.joinToString(", ") { "${it + 1}" }}"
     }
@@ -311,7 +329,7 @@ private fun formatRow(vararg columns: String): String {
     }.joinToString(" ").trimEnd()
 }
 
-private fun formatReportNumber(value: Double): String {
+internal fun formatReportNumber(value: Double): String {
     if (value.isNaN()) return "NaN"
     if (value.isInfinite()) return if (value > 0) "∞" else "-∞"
     val factor = 1_000L

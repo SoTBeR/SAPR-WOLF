@@ -6,6 +6,7 @@ import ru.sotber.sapr_wolf.processor.calculateDisplacements
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PostprocessorTest {
@@ -129,5 +130,42 @@ class PostprocessorTest {
                 "Равновесие нарушено в эталонной задаче ${index + 1}: невязка = $residual"
             )
         }
+    }
+
+    @Test
+    fun testHtmlReportContainsConstructionSchemeAndEpuresSvg() {
+        val construction = Construction(
+            rods = listOf(
+                Rod(length = 2.0, crossSectionArea = 1.0, elasticModulus = 1.0, allowableStress = 1.0, distributedLoad = 2.0),
+                Rod(length = 1.0, crossSectionArea = 2.0, elasticModulus = 1.0, allowableStress = 100.0, distributedLoad = 0.0),
+            ),
+            nodeForces = listOf(0.0, -4.0, 0.0),
+            fixedNodes = setOf(0, 2),
+        )
+        val displacements = calculateDisplacements(construction).getOrThrow()
+
+        val html = buildReport(construction, displacements, projectName = "Тест SVG", format = ReportFormat.Html)
+        assertTrue(html.contains("Конструкция, расчётная схема и эпюры"))
+        assertTrue(html.contains("<svg "))
+        assertTrue(html.contains("</svg>"))
+        assertTrue(html.contains("class=\"rods\""))
+        assertTrue(html.contains("class=\"supports\""))
+        assertTrue(html.contains("class=\"nodal-forces\""))
+        assertTrue(html.contains("class=\"nodes\""))
+        assertTrue(html.contains("class=\"epure-guides\""))
+        assertTrue(html.contains("class=\"epure-axialforce\""))
+        assertTrue(html.contains("class=\"epure-normalstress\""))
+        assertTrue(html.contains("class=\"epure-displacement\""))
+        assertTrue(html.contains(">Nx<"))
+        assertTrue(html.contains(">σx<"))
+        assertTrue(html.contains(">Ux<"))
+        assertTrue(html.contains(">2q<"))
+        assertTrue(html.contains(">4F<"))
+        assertTrue(html.contains(">2L<"))
+        assertTrue(html.contains("#d92d20")) // overloaded rod highlight
+        assertFalse(html.contains("NaN"))
+
+        val txt = buildReport(construction, displacements, projectName = "Тест SVG", format = ReportFormat.Text)
+        assertFalse(txt.contains("<svg"))
     }
 }
